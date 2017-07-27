@@ -6,10 +6,6 @@ public class StudentEditor : Editor
 {
     Student myTarget;
 
-    private void OnEnable()
-    {
-    }
-
     public override void OnInspectorGUI()
     {
         myTarget = (Student)target;

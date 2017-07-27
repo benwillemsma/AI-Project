@@ -4,15 +4,15 @@ using UnityEngine;
 
 public enum studentStats
 {
-    Hunger,
+    Energy,
     Happyness,
     Stamina,
     Count
 }
 public enum studentResources
 {
-    CourseWork,
     Money,
+    CourseWork,
     Count
 }
 
@@ -44,22 +44,21 @@ public class StudentStat : Resource
     }
     public StudentStat(string name) : base(name)
     {
-        this.maxValue = 1;
+        this.maxValue = 10;
         this.minValue = 0;
     }
 }
 
 public class Student : MonoBehaviour
 {
-    [SerializeField]
+    // Stats and Resources
     public List<Course> courses = new List<Course>();
-
-    [SerializeField]
+    
     public List<StudentStat> stats = new List<StudentStat>();
-    public StudentStat Hunger
+    public StudentStat Energy
     {
-        get { return stats[(int)studentStats.Hunger]; }
-        set { stats[(int)studentStats.Hunger] = value; }
+        get { return stats[(int)studentStats.Energy]; }
+        set { stats[(int)studentStats.Energy] = value; }
     }
     public StudentStat Happyness
     {
@@ -71,8 +70,7 @@ public class Student : MonoBehaviour
         get { return stats[(int)studentStats.Stamina]; }
         set { stats[(int)studentStats.Stamina] = value; }
     }
-
-    [SerializeField]
+    
     public List<Resource> resources = new List<Resource>();
     public Resource CourseWork
     {
@@ -85,21 +83,23 @@ public class Student : MonoBehaviour
         set { resources[(int)studentResources.Money] = value; }
     }
 
+    // Variables
+
     private void Start()
     {
         //Initial Stats
         for (int i = 0; i < (int)studentStats.Count; i++)
             stats.Add(new StudentStat(System.Enum.GetNames(typeof(studentStats))[i]));
 
-        Hunger.value = 1;
-        Happyness.value = 1;
-        Stamina.value = 15;
-        Stamina.maxValue = 15;
-        Stamina.minValue = 0;
+        Happyness.value = 10;
+        Energy.value = 10;
+        Stamina.value = 10;
 
         //Initial Resources
         for (int i = 0; i < (int)studentResources.Count; i++)
             resources.Add(new StudentStat(System.Enum.GetNames(typeof(studentResources))[i]));
+
+        Money.value = 10;
 
         //Add student to apropriate lists
         GameController.instance.students.Add(this);
@@ -108,13 +108,21 @@ public class Student : MonoBehaviour
     }
     private void Update()
     {
-        if (Stamina.value > 0)
-            Stamina.value -= Time.deltaTime / 10;
-        else
-            Stamina.value = 0;
+        if(Stamina.value  < 5)
+        StartCoroutine(Travel(FindBed()));
 
-        if (stats[(int)studentStats.Hunger].value <= 0)
+        if (Energy.value < 5)
+            StartCoroutine(Travel(FindFood()));
+
+
+        if (stats[(int)studentStats.Energy].value <= 0)
             Die();
+
+        Happyness.value
+           = (stats[(int)studentStats.Energy].value
+           + stats[(int)studentStats.Stamina].value
+           + resources[(int)studentResources.Money].value) / 3;
+
     }
     private void OnDestroy()
     {
@@ -123,6 +131,7 @@ public class Student : MonoBehaviour
             courses[0].KickStudent(this);
     }
 
+    //For Settig multiple stats
     private List<StudentStat> setStats(params float[] newStats)
     {
         if (stats.Count == newStats.Length)
@@ -130,7 +139,8 @@ public class Student : MonoBehaviour
                 stats[i].value = newStats[i];
         return stats;
     }
-    private List<StudentStat> changeStats(params float[] statDeltas)
+    //For Changing mutiple stats by a delta
+    public List<StudentStat> changeStats(params float[] statDeltas)
     {
         if(stats.Count == statDeltas.Length)
             for (int i = 0; i < stats.Count; i++)
@@ -138,6 +148,7 @@ public class Student : MonoBehaviour
         return stats;
     }
 
+    //For Settig multiple resources
     private List<Resource> setResources(params float[] newResources)
     {
         if (resources.Count == newResources.Length)
@@ -145,12 +156,40 @@ public class Student : MonoBehaviour
                 resources[i].value = newResources[i];
         return resources;
     }
-    private List<Resource> changeResource(params float[] resourceDeltas)
+    //For Changing mutiple resources by a delta
+    public List<Resource> changeResource(params float[] resourceDeltas)
     {
         if (resources.Count == resourceDeltas.Length)
             for (int i = 0; i < resources.Count; i++)
                 resources[i].value += resourceDeltas[i];
         return resources;
+    }
+
+    // Logic Functions
+    Interactable FindBed()
+    {
+        return new Interactable();
+    }
+
+    Interactable FindFood()
+    {
+        return new Interactable();
+    }
+
+    //Activities
+    private IEnumerator Travel(Interactable activyObject)
+    {
+        bool thereYet = true;
+        while (!thereYet)
+        {
+            Stamina.value -= Time.deltaTime / 10;
+            Energy.value -= Time.deltaTime / 100;
+            //check activyObject is in use by other student
+
+            //pathfinding stuff to find activyObject
+
+            yield return null;
+        }
     }
 
     private void Die()

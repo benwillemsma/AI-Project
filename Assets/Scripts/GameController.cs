@@ -33,7 +33,7 @@ public class GameController : MonoBehaviour
         else
             Destroy(gameObject);
 
-        AddCourse("Beginners Course");
+        AddCourse("Introductory Course");
         SchoolReputation = schoolRep;
     }
 
