@@ -2,52 +2,41 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(Animator))]
 public class ComputerLab : MonoBehaviour
 {
     public float amountPerUse;
-    public float LabTimeLeft;
-
-    public Course labCourse;
-    List<Student> students;
+    public bool LabOpen;
 
     [SerializeField]
-    Transform[] Desks;
+    Interactable[] Desks;
 
-    public void AddStudent(Student student)
-    {
-        students.Add(student);
-    }
-    public void RemoveStudent(Student student)
-    {
-        students.Remove(student);
-    }
+    private float LabTimeLeft;
+    private Animator anim;
 
-    public void UseLab(Student student)
+    private void Start()
     {
-        student.CourseWork.value--;
-        student.courses[student.courses.Count].ImproveGrade(student, amountPerUse);
-
-        for (int i = 0; i < students.Count; i++)
-        {
-            if (students[i] != student)
-                students[i].courses[students[i].courses.Count].ImproveGrade(students[i], amountPerUse * 0.1f);
-        }
+        anim = GetComponent<Animator>();
     }
 
     public void Update()
     {
         LabTimeLeft -= Time.deltaTime;
+
+        //if (LabTimeLeft <= 0)
+            //CloseLab();
     }
 
     public void OpenLab(float duration)
     {
-        //do an open
+        LabOpen = true;
         LabTimeLeft = duration;
+        anim.SetBool("Open",true);
     }
 
-    public void CloseLab(float duration)
+    public void CloseLab()
     {
-        //such an closed
-        LabTimeLeft = duration;
+        anim.SetBool("Open", false);
+        LabOpen = false;
     }
 }

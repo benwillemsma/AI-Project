@@ -2,15 +2,24 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Interactable : MonoBehaviour {
+public enum InteractableType
+{
+    Bed,
+    FoodSource,
+    Desk,
+    Count,
+}
 
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+public class Interactable : MonoBehaviour
+{
+    public InteractableType type;
+    public bool InUse;
+
+    public Transform activityPoint;
+    public Activity activity;
+
+    /* If this where a pollished game
+     * public Animation startActivity;
+     * public Animation activityLoop;
+     * public Animation finishActivity;*/
 }

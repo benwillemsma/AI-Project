@@ -7,7 +7,12 @@ public class GameController : MonoBehaviour
 
     public GameObject studentPrefab;
 
-    [SerializeField,Range(0,100)]
+    public List<Interactable> InteractableObjects = new List<Interactable>();
+
+    public List<Student> students = new List<Student>();
+    public Course[] courses;
+
+    [SerializeField, Range(0, 100)]
     private float schoolRep;
     public float SchoolReputation
     {
@@ -23,17 +28,15 @@ public class GameController : MonoBehaviour
         }
     }
 
-    public List<Student> students = new List<Student>();
-    public List<Course> courses = new List<Course>();
-
     private void Start()
     {
+        InteractableObjects.AddRange(FindObjectsOfType<Interactable>());
+
         if (!instance)
             instance = this;
         else
             Destroy(gameObject);
 
-        AddCourse("Introductory Course");
         SchoolReputation = schoolRep;
     }
 
@@ -41,13 +44,16 @@ public class GameController : MonoBehaviour
     {
         Instantiate(studentPrefab, Vector3.zero, Quaternion.identity);
     }
-    public void AddCourse(string courseName, params Student[] courseStudents)
-    {
-        Course newCourse = new Course(courseName);
 
-        for (int i = 0; i < courseStudents.Length; i++)
-            newCourse.EnrollStudent(courseStudents[i]);
-        
-        courses.Add(newCourse);
+    public Interactable[] FindOfType(InteractableType type)
+    {
+        List<Interactable> ObjectsOfType = new List<Interactable>();
+        for (int i = 0; i < InteractableObjects.Count; i++)
+        {
+            if(InteractableObjects[i].type == type && !InteractableObjects[i].InUse)
+                ObjectsOfType.Add(InteractableObjects[i]);
+        }
+
+        return ObjectsOfType.ToArray();
     }
 }

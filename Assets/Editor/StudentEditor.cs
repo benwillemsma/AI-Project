@@ -1,58 +1,67 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
-[CustomEditor(typeof(Student))]
+[CustomEditor(typeof(Student)),CanEditMultipleObjects]
 public class StudentEditor : Editor
 {
-    Student myTarget;
+    SerializedProperty statsProp;
+    SerializedProperty resourcesProp;
+    SerializedProperty courseProp;
+
+    public void OnEnable()
+    {
+        statsProp = serializedObject.FindProperty("stats");
+        resourcesProp  = serializedObject.FindProperty("resources");
+        courseProp  = serializedObject.FindProperty("courses");
+    }
 
     public override void OnInspectorGUI()
     {
-        myTarget = (Student)target;
-        if (myTarget.stats != null)
+        serializedObject.Update();
+
+        if (!serializedObject.isEditingMultipleObjects || !resourcesProp.hasMultipleDifferentValues)
         {
-            GUILayout.Label("Stats:");
-            string[] statNames = System.Enum.GetNames(typeof(studentStats));
-            for (int i = 0; i < myTarget.stats.Count; i++)
+            if (statsProp.isArray)
             {
-                GUILayout.BeginHorizontal();
-                GUILayout.Space(20);
-                GUILayout.Label(statNames[i], GUILayout.Width(100));
-                myTarget.stats[i].value = GUILayout.HorizontalSlider(myTarget.stats[i].value, myTarget.stats[i].minValue, myTarget.stats[i].maxValue);
-                myTarget.stats[i].value = EditorGUILayout.FloatField(myTarget.stats[i].value, GUILayout.Width(100));
-                GUILayout.EndHorizontal();
+                statsProp.arraySize = System.Enum.GetNames(typeof(studentStats)).Length - 1;
+                GUILayout.Label("Stats:");
+                string[] statNames = System.Enum.GetNames(typeof(studentStats));
+                for (int i = 0; i < statsProp.arraySize; i++)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Space(20);
+                    GUILayout.Label(statNames[i], GUILayout.Width(100));
+                    EditorGUILayout.Slider(statsProp.GetArrayElementAtIndex(i), 0, 10, GUIContent.none);
+                    GUILayout.EndHorizontal();
+                }
+            }
+
+            if (resourcesProp.isArray)
+            {
+                resourcesProp.arraySize = System.Enum.GetNames(typeof(studentResources)).Length - 1;
+                GUILayout.Label("Resources:");
+                string[] resourceNames = System.Enum.GetNames(typeof(studentResources));
+                for (int i = 0; i < resourcesProp.arraySize; i++)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Space(20);
+                    GUILayout.Label(resourceNames[i], GUILayout.Width(100));
+                    EditorGUILayout.PropertyField(resourcesProp.GetArrayElementAtIndex(i), GUIContent.none);
+                    GUILayout.EndHorizontal();
+                }
+            }
+            if (courseProp.isArray && courseProp.arraySize != 0)
+            {
+                GUILayout.Label("Courses:");
+                for (int i = 0; i < courseProp.arraySize; i++)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Space(20);
+                    GUILayout.Label(courseProp.GetArrayElementAtIndex(i).FindPropertyRelative("name").stringValue, GUILayout.Width(150));
+                    GUILayout.EndHorizontal();
+                }
             }
         }
-
-        GUILayout.Space(10);
-
-        if (myTarget.resources != null)
-        {
-            GUILayout.Label("Resources:");
-            string[] resourceNames = System.Enum.GetNames(typeof(studentResources));
-            for (int i = 0; i < myTarget.resources.Count; i++)
-            {
-                GUILayout.BeginHorizontal();
-                GUILayout.Space(20);
-                GUILayout.Label(resourceNames[i], GUILayout.Width(100));
-                myTarget.resources[i].value = EditorGUILayout.FloatField(myTarget.resources[i].value);
-                GUILayout.EndHorizontal();
-            }
-        }
-
-        GUILayout.Space(10);
-
-        if (myTarget.courses != null)
-        {
-            GUILayout.Label("Courses:");
-            for (int i = 0; i < myTarget.courses.Count; i++)
-            {
-                GUILayout.BeginHorizontal();
-                GUILayout.Space(20);
-                GUILayout.Label(myTarget.courses[i].name, GUILayout.Width(150));
-                GUILayout.EndHorizontal();
-            }
-        }
-        EditorUtility.SetDirty(target); //to make the inspector continue to update while playing - does not perserve undo states
+        serializedObject.ApplyModifiedProperties();
     }
 }
