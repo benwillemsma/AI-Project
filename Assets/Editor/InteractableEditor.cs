@@ -6,6 +6,7 @@ using System.Collections.Generic;
 public class InteractableEditor : Editor
 {
     SerializedProperty inUseProp;
+    SerializedProperty oneUseProp;
     SerializedProperty typeProp;
 
     SerializedProperty PointProp;
@@ -19,6 +20,7 @@ public class InteractableEditor : Editor
         typeProp = serializedObject.FindProperty("type");
         PointProp = serializedObject.FindProperty("activityPoint");
         NameProp = serializedObject.FindProperty("activity.activityName");
+        oneUseProp = serializedObject.FindProperty("activity.oneUse");
         statProp = serializedObject.FindProperty("activity.statsDelta");
         resourceProp = serializedObject.FindProperty("activity.resourcesDelta");
     }
@@ -37,6 +39,7 @@ public class InteractableEditor : Editor
 
             GUILayout.Space(20);
             EditorGUILayout.PropertyField(NameProp);
+            EditorGUILayout.PropertyField(oneUseProp);
             EditorGUILayout.PropertyField(PointProp);
 
             GUILayout.Label("Stat Deltas:");

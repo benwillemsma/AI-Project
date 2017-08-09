@@ -23,8 +23,8 @@ public class Student : MonoBehaviour
     public List<Course> courses;
     private Pathfinding pathing;
 
-    [SerializeField]
-    private Queue<Activity> currentState = new Queue<Activity>();
+    private Interactable currentObject;
+    private Queue<Activity> currentActivity = new Queue<Activity>();
     private Activity walking;
 
     private void Start()
@@ -72,16 +72,14 @@ public class Student : MonoBehaviour
         get { return resources[(int)studentResources.Money]; }
         set { resources[(int)studentResources.Money] = value; }
     }
-
-    //For Settig multiple stats
-    private List<float> setStats(params float[] newStats)
+    
+    public List<float> setStats(params float[] newStats)
     {
         if (stats.Count == newStats.Length)
             for (int i = 0; i < stats.Count; i++)
                 stats[i] = newStats[i];
         return stats;
     }
-    //For Changing mutiple stats by a delta per second
     public List<float> changeStats(params float[] statDeltas)
     {
         if (stats.Count == statDeltas.Length)
@@ -89,21 +87,33 @@ public class Student : MonoBehaviour
                 stats[i] += statDeltas[i] * Time.deltaTime;
         return stats;
     }
+    public List<float> changeStatsDirect(params float[] statDeltas)
+    {
+        if (stats.Count == statDeltas.Length)
+            for (int i = 0; i < stats.Count; i++)
+                stats[i] += statDeltas[i];
+        return stats;
+    }
 
-    //For Settig multiple resources 
-    private List<float> setResources(params float[] newResources)
+    public List<float> setResources(params float[] newResources)
     {
         if (resources.Count == newResources.Length)
             for (int i = 0; i < resources.Count; i++)
                 resources[i] = newResources[i];
         return resources;
     }
-    //For Changing mutiple resources by a delta per second
-    public List<float> changeResource(params float[] resourceDeltas)
+    public List<float> changeResources(params float[] resourceDeltas)
     {
         if (resources.Count == resourceDeltas.Length)
             for (int i = 0; i < resources.Count; i++)
                 resources[i] += resourceDeltas[i] * Time.deltaTime;
+        return resources;
+    }
+    public List<float> changeResourcesDirect(params float[] resourceDeltas)
+    {
+        if (resources.Count == resourceDeltas.Length)
+            for (int i = 0; i < resources.Count; i++)
+                resources[i] += resourceDeltas[i];
         return resources;
     }
     #endregion
@@ -117,24 +127,26 @@ public class Student : MonoBehaviour
         if (Energy <= 0)
             Die();
 
-        // If Student does not have a current state Assign one.
-        else if (currentState.Count == 0)
+        // If Student does not have a current Activity Assign one.
+        else if (currentActivity.Count == 0)
         {
-            if (Energy < Stamina)
+            if (Money == 0)
+                FindInteractable(InteractableType.Job);
+            else if (Energy < Stamina)
                 FindInteractable(InteractableType.FoodSource);
             else
                 FindInteractable(InteractableType.Bed);
         }
-        else if (Energy < 5) //<-running low on Energy
-            FindInteractable(InteractableType.FoodSource);
 
-        else if (Stamina < 5) //<-running low on Stamina
-            FindInteractable(InteractableType.Bed);
-
-        if (currentState.Count > 0)
+        if (currentActivity.Count > 0)
         {
-            Debug.Log(currentState.Peek().activityName);
-            currentState.Peek().DoActivity(this);
+            Debug.Log(currentActivity.Peek().activityName);
+            if (currentActivity.Peek().isDone(this) == true)
+            {
+                currentObject.InUse = false;
+                currentObject = null;
+                currentActivity.Dequeue();
+            }
         }
     }
     private void OnDestroy()
@@ -147,9 +159,7 @@ public class Student : MonoBehaviour
     // Find Functions
     void FindInteractable(InteractableType type)
     {
-        Debug.Log("here");
         float closestDistance = Mathf.Infinity;
-        Interactable closestObject = null;
 
         Interactable[] objects = GameController.instance.FindOfType(type);
         if (objects.Length == 0)
@@ -159,24 +169,26 @@ public class Student : MonoBehaviour
             for (int i = 0; i < objects.Length; i++)
             {
                 float distance = (objects[i].transform.position - transform.position).magnitude;
-                if (distance <= closestDistance && !objects[i].InUse)
+                if (distance <= closestDistance)
                 {
                     closestDistance = distance;
-                    closestObject = objects[i];
+                    currentObject = objects[i];
                 }
             }
 
             if (closestDistance > 0.2f)
-                StartCoroutine(Travel(closestObject));
-            else currentState.Enqueue(closestObject.activity);
+                StartCoroutine(Travel(currentObject));
+            else currentActivity.Enqueue(currentObject.activity);
         }
     }
 
     //Activities
     private IEnumerator Travel(Interactable interactableObject)
     {
-        Debug.Log("here");
-        currentState.Enqueue(walking);
+        pathing.destination = interactableObject.activityPoint;
+        transform.LookAt(transform.position + (pathing.destination.position - transform.position).normalized);
+
+        currentActivity.Enqueue(walking);
 
         bool thereYet = false;
         while (!thereYet)
@@ -184,15 +196,16 @@ public class Student : MonoBehaviour
             if (pathing.AtDestination() || interactableObject.InUse)
                 break;
             else
-                pathing.MoveTo(interactableObject.activityPoint);
+                pathing.MoveTo();
             yield return null;
         }
-        currentState.Dequeue();
+        currentActivity.Dequeue();
         if (pathing.AtDestination())
         {
             transform.rotation = interactableObject.activityPoint.rotation;
+            Debug.Log(interactableObject.name);
             interactableObject.InUse = true;
-            currentState.Enqueue(interactableObject.activity);
+            currentActivity.Enqueue(interactableObject.activity);
         }
     }
 

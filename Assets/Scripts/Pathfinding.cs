@@ -6,10 +6,11 @@ public class Pathfinding : MonoBehaviour
 {
     public Transform destination;
 
-    public void MoveTo(Transform destination)
+    public void MoveTo(Transform destination = null)
     {
-        this.destination = destination;
-        transform.position = Vector3.MoveTowards(transform.position, destination.position, 0.05f);
+        if(destination != null)
+            this.destination = destination;
+        transform.position = Vector3.MoveTowards(transform.position, this.destination.position, 0.05f);
     }
 
     public bool AtDestination()
