@@ -6,27 +6,34 @@ public class Course
 {
     public string name;
     public ComputerLab lab;
+    public float courseCost = 10;
 
-    Dictionary<Student, float> students = new Dictionary<Student, float>();
+    List<Student> students = new List<Student>();
+    Dictionary<Student, float> grades = new Dictionary<Student, float>();
 
-    public Course(string name, ComputerLab lab, params Student[] students)
+    public Course(string name, ComputerLab lab, float cost, params Student[] students)
     {
         this.name = name;
         this.lab = lab;
+        this.courseCost = cost;
         for (int i = 0; i < students.Length; i++)
-        {
-            this.students.Add(students[i], 0);
-        }
+            this.students.Add(students[i]);
     }
-    public Course(string name,ComputerLab lab)
+    public Course(string name,ComputerLab lab, float cost)
     {
         this.name = name;
         this.lab = lab;
+        this.courseCost = cost;
+    }
+
+    public void SetLabCost()
+    {
+        lab.GetComponent<Interactable>().activity.resourcesDelta[0] = courseCost;
     }
 
     public void EnrollStudent(Student newStudent)
     {
-        students.Add(newStudent, 0);
+        students.Add(newStudent);
         newStudent.courses.Add(this);
     }
     public void KickStudent(Student student)
@@ -38,8 +45,13 @@ public class Course
     public void ImproveGrade(Student student,float increase)
     {
         GameController.instance.SchoolReputation += 5;
-        students[student] += increase;
-        if (students[student] >= 100)
+        grades[student] += increase;
+        for (int i = 0; i < students.Count; i++)
+        {
+            if (students[i] != student)
+                grades[student] += increase * 0.1f;
+        }
+        if (grades[student] >= 100)
             GraduateStudent(student);
     }
     public void GraduateStudent(Student student)

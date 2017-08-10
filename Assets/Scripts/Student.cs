@@ -146,6 +146,12 @@ public class Student : MonoBehaviour
                 currentObject.InUse = false;
                 currentObject = null;
                 currentActivity.Dequeue();
+
+                switch (currentObject.type)
+                {
+                    case InteractableType.Job:
+                        break;
+                }
             }
         }
     }

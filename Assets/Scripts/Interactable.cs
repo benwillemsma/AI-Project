@@ -9,6 +9,7 @@ public enum InteractableType
     Desk,
     Job,
     Book,
+    Lab,
     Count,
 }
 
