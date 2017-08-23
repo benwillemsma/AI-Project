@@ -8,34 +8,31 @@ public class Construction : MonoBehaviour
     public GameObject[] Phases;
     public GameObject FinishedProduct;
 
+    [SerializeField]
     private float completion = 0;
-    private bool hasBeenWorkedOn;
+    private bool hasBeenWorkedOn = false;
     
-    public float Completion
+    public void WorkOnProject(int completionDelta)
     {
-        get { return completion; }
-
-        set
-        {
-            completion = value;
-            if (hasBeenWorkedOn == false)
-            UpdatePhase();
-        }
+        completion += completionDelta * Time.deltaTime; // completionDelta = Percent of Work to be Done in one second
+        if (hasBeenWorkedOn == false)
+            StartCoroutine(UpdatePhase());
     }
 	
 	IEnumerator UpdatePhase ()
     {
-        if (completion == 100)
+        if (completion >= 100)
         {
-            Instantiate(FinishedProduct, transform.position, transform.rotation);
-            Destroy(this);
+            Instantiate(FinishedProduct, transform.position, transform.rotation, transform.parent);
+            Destroy(gameObject);
         }
         else
         {
             hasBeenWorkedOn = true;
             yield return new WaitForEndOfFrame();
-
-            ConstructionPhase = Mathf.RoundToInt(completion / Phases.Length);
+            hasBeenWorkedOn = false;
+            
+            ConstructionPhase = Mathf.RoundToInt(completion / 100 * (Phases.Length-1));
             for (int i = 0; i < Phases.Length; i++)
                 Phases[i].SetActive(ConstructionPhase == i || ConstructionPhase == i + 1);
         }

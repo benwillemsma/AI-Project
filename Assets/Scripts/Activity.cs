@@ -11,6 +11,12 @@ public class Activity
     public List<float> resourcesDelta = new List<float>();
 
     public Activity() { }
+    public Activity(Activity copyActivity)
+    {
+        activityName = copyActivity.activityName;
+        statsDelta = copyActivity.statsDelta;
+        resourcesDelta = copyActivity.resourcesDelta;
+    }
     public Activity(string name, float[] newStatsDeltas,params float[] newResourcesDelta)
     {
         activityName = name;

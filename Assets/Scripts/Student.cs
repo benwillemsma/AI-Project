@@ -29,17 +29,15 @@ public class Student : MonoBehaviour
 
     private void Start()
     {
+        GameController.instance.students.Add(this);
+
         pathing = GetComponent<Pathfinding>();
-        walking = new Activity("Walk",new float[] { -0.01f, 0, -0.05f });
+        walking = new Activity("Walk",new float[] { -0.05f, 0, -0.05f });
 
         for (int i = 0; i < (int)studentStats.Count; i++)
             stats[i] = 10;
         for (int i = 0; i < (int)studentResources.Count; i++)
             resources.Add(0);
-        Money = 10;
-
-
-        GameController.instance.students.Add(this);
     }
     #endregion
 
@@ -132,26 +130,24 @@ public class Student : MonoBehaviour
         {
             if (Money == 0)
                 FindInteractable(InteractableType.Job);
-            else if (Energy < Stamina)
+            else if (CourseWork == 0)
+                FindInteractable(InteractableType.Book);
+            else if (Energy < Stamina && Energy < 5)
                 FindInteractable(InteractableType.FoodSource);
-            else
+            else if(Stamina < 5)
                 FindInteractable(InteractableType.Bed);
+            else
+                FindInteractable(InteractableType.Desk);
         }
 
+        // If Student has an Activity, do Activity.
         if (currentActivity.Count > 0)
         {
-            Debug.Log(currentActivity.Peek().activityName);
-            if (currentActivity.Peek().isDone(this) == true)
+            if (currentActivity.Peek().isDone(this) == true || pathing.destination == null)
             {
-                currentObject.InUse = false;
+                currentObject.InUse = null;
                 currentObject = null;
                 currentActivity.Dequeue();
-
-                switch (currentObject.type)
-                {
-                    case InteractableType.Job:
-                        break;
-                }
             }
         }
     }
@@ -169,16 +165,22 @@ public class Student : MonoBehaviour
 
         Interactable[] objects = GameController.instance.FindOfType(type);
         if (objects.Length == 0)
+        {
             Debug.LogWarning("There are not enough " + type);
+            //Build one...
+        }
         else
         {
             for (int i = 0; i < objects.Length; i++)
             {
-                float distance = (objects[i].transform.position - transform.position).magnitude;
-                if (distance <= closestDistance)
+                if (objects[i])
                 {
-                    closestDistance = distance;
-                    currentObject = objects[i];
+                    float distance = (objects[i].transform.position - transform.position).magnitude;
+                    if (distance <= closestDistance)
+                    {
+                        closestDistance = distance;
+                        currentObject = objects[i];
+                    }
                 }
             }
 
@@ -191,26 +193,32 @@ public class Student : MonoBehaviour
     //Activities
     private IEnumerator Travel(Interactable interactableObject)
     {
+        if (interactableObject.InUse)
+        {
+            if (GameController.FindCloser(transform, interactableObject.InUse.transform, interactableObject.activityPoint.position) == transform)
+                interactableObject.InUse = this;
+            else yield break;
+        }
+        else interactableObject.InUse = this;
+
         pathing.destination = interactableObject.activityPoint;
         transform.LookAt(transform.position + (pathing.destination.position - transform.position).normalized);
 
         currentActivity.Enqueue(walking);
+        pathing.MoveTo();
 
         bool thereYet = false;
         while (!thereYet)
         {
-            if (pathing.AtDestination() || interactableObject.InUse)
-                break;
-            else
-                pathing.MoveTo();
+            if (pathing.AtDestination() || this != interactableObject.InUse)
+                thereYet = true;
             yield return null;
         }
-        currentActivity.Dequeue();
+        if(currentActivity.Count > 0)
+            currentActivity.Dequeue();
         if (pathing.AtDestination())
         {
             transform.rotation = interactableObject.activityPoint.rotation;
-            Debug.Log(interactableObject.name);
-            interactableObject.InUse = true;
             currentActivity.Enqueue(interactableObject.activity);
         }
     }

@@ -16,7 +16,7 @@ public enum InteractableType
 public class Interactable : MonoBehaviour
 {
     public InteractableType type;
-    public bool InUse = false;
+    public Student InUse = null;
 
     public Transform activityPoint;
     public Activity activity;

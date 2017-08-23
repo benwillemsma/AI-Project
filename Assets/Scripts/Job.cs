@@ -1,16 +1,20 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.Events;
 
-public class Job : Activity
+[RequireComponent(typeof(Interactable))]
+public class Job : MonoBehaviour
 {
-    public delegate float Progress();
-    public Progress progress;
+    private Interactable stats;
+    public UnityEvent progress;
 
-    public Job(string name, float[] newStatsDeltas, params float[] newResourcesDelta):base(name,newStatsDeltas,newResourcesDelta)
+    private void Awake()
     {
-        activityName = name;
-        statsDelta.AddRange(newStatsDeltas);
-        resourcesDelta.AddRange(newResourcesDelta);
+        stats = GetComponent<Interactable>();
+    }
+
+    private void Update()
+    {
+        if (stats.InUse && (stats.InUse.transform.position - stats.activityPoint.position).magnitude < 0.2f)
+            progress.Invoke();
     }
 }

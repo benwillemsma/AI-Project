@@ -1,16 +1,23 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
+[RequireComponent(typeof(NavMeshAgent))]
 public class Pathfinding : MonoBehaviour
 {
+    private NavMeshAgent agent;
     public Transform destination;
 
-    public void MoveTo(Transform destination = null)
+    private void Awake()
     {
-        if(destination != null)
-            this.destination = destination;
-        transform.position = Vector3.MoveTowards(transform.position, this.destination.position, 0.05f);
+        agent = GetComponent<NavMeshAgent>();
+        agent.updateRotation = false;
+    }
+
+    public void MoveTo()
+    {
+        agent.SetDestination(destination.position);
     }
 
     public bool AtDestination()
@@ -20,14 +27,6 @@ public class Pathfinding : MonoBehaviour
             if ((transform.position - destination.position).magnitude < 0.2f)
                 return true;
         }
-        return false;
-    }
-
-    public bool FindPath()
-    {
-        //if path found
-        return true;
-        //else
         return false;
     }
 }

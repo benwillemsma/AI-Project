@@ -19,6 +19,10 @@ public class InteractableEditor : Editor
         inUseProp = serializedObject.FindProperty("InUse");
         typeProp = serializedObject.FindProperty("type");
         PointProp = serializedObject.FindProperty("activityPoint");
+        ActivityProp();
+    }
+    private void ActivityProp()
+    {
         NameProp = serializedObject.FindProperty("activity.activityName");
         oneUseProp = serializedObject.FindProperty("activity.oneUse");
         statProp = serializedObject.FindProperty("activity.statsDelta");

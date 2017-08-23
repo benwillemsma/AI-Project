@@ -56,4 +56,12 @@ public class GameController : MonoBehaviour
 
         return ObjectsOfType.ToArray();
     }
+
+    public static Transform FindCloser(Transform ObjectOne,Transform Objecttwo, Vector3 point)
+    {
+        if ((point - ObjectOne.position).magnitude < (point - Objecttwo.position).magnitude)
+            return ObjectOne;
+        else
+            return Objecttwo;
+    }
 }
