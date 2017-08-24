@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public enum InteractableType
 {
@@ -26,7 +24,12 @@ public class Interactable : MonoBehaviour
     {
         GameController.instance.InteractableObjects.Add(this);
         if (!activityPoint)
-            activityPoint = transform;
+        {
+            if (transform.GetChild(0))
+                activityPoint = transform.GetChild(0);
+            else
+                activityPoint = transform;
+        }
     }
 
     public void Delete()

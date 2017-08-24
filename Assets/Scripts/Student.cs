@@ -143,7 +143,7 @@ public class Student : MonoBehaviour
         // If Student has an Activity, do Activity.
         if (currentActivity.Count > 0)
         {
-            Debug.Log(currentActivity.Peek().activityName);
+            Debug.Log(name + ":" + currentActivity.Peek().activityName);
             if (currentActivity.Peek().isDone(this) == true || !currentObject)
             {
                 if (currentObject)
@@ -165,11 +165,11 @@ public class Student : MonoBehaviour
     // Find Functions
     void FindInteractable(InteractableType type)
     {
-        Interactable[] objects = GameController.instance.FindOfType(type);
+        Interactable[] objects = GameController.instance.FindInteractable(type);
         if (objects.Length == 0 && type != InteractableType.Build)
         {
-            Debug.LogWarning("There are not enough " + type);
-            if(!FindConstruction(type))
+            Debug.Log(name + ":" + "There are not enough " + type);
+            if (!FindConstruction(type))
                 BuildRoom(type);
         }
         else
@@ -184,7 +184,7 @@ public class Student : MonoBehaviour
         Construction[] objects = GameController.instance.FindConstruction(type);
         if (objects.Length == 0 && type != InteractableType.Build)
         {
-            Debug.LogWarning("No Construction found for " + type);
+            Debug.Log(name + ":" + "No Construction found for " + type);
             return false;
         }
         else
@@ -201,11 +201,16 @@ public class Student : MonoBehaviour
     {
         if (interactableObject)
         {
+            Debug.Log(name + ":" + "travel to " + interactableObject.name);
             if (interactableObject.InUse)
             {
                 if (GameController.FindCloser(transform, interactableObject.InUse.transform, interactableObject.activityPoint.position) == transform)
                     interactableObject.InUse = this;
-                else yield break;
+                else
+                {
+                    Debug.Log(name + ":" + "travel to " + interactableObject.name);
+                    yield break;
+                }
             }
             else interactableObject.InUse = this;
 
@@ -235,9 +240,10 @@ public class Student : MonoBehaviour
         FindInteractable(InteractableType.Build);
         if (currentObject)
             Instantiate
-                (GameController.instance.Rooms[roomIndex], 
-                currentObject.transform.GetChild(0).position, 
-                currentObject.transform.GetChild(0).rotation);
+                (GameController.instance.Rooms[roomIndex],
+                currentObject.transform.GetChild(0).position,
+                currentObject.transform.GetChild(0).rotation,
+                currentObject.transform.root);
     }
 
     private void Die()

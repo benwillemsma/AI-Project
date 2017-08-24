@@ -26,7 +26,8 @@ public class Pathfinding : MonoBehaviour
         {
             if ((transform.position - destination.position).magnitude < 0.2f)
                 return true;
+            else return false;
         }
-        return false;
+        return true;
     }
 }

@@ -62,7 +62,7 @@ public class GameController : MonoBehaviour
         Instantiate(studentPrefab, Vector3.zero, Quaternion.identity);
     }
 
-    public Interactable[] FindOfType(InteractableType type)
+    public Interactable[] FindInteractable(InteractableType type)
     {
         List<Interactable> ObjectsOfType = new List<Interactable>();
         for (int i = 0; i < InteractableObjects.Count; i++)
@@ -86,12 +86,12 @@ public class GameController : MonoBehaviour
         return ObjectsOfType.ToArray();
     }
 
-    public static Transform FindCloser(Transform ObjectOne,Transform Objecttwo, Vector3 point)
+    public static Transform FindCloser(Transform ObjectOne,Transform ObjectTwo, Vector3 point)
     {
-        if ((point - ObjectOne.position).magnitude < (point - Objecttwo.position).magnitude)
+        if ((point - ObjectOne.position).magnitude < (point - ObjectTwo.position).magnitude)
             return ObjectOne;
         else
-            return Objecttwo;
+            return ObjectTwo;
     }
 
     public static T FindClosest<T>(T[] objects, Transform reference)
@@ -101,10 +101,13 @@ public class GameController : MonoBehaviour
         {
             if (objects[i] != null)
             {
-                float distance = ((objects[i] as MonoBehaviour).transform.position - reference.position).magnitude;
+                float distance = ((objects[i]as MonoBehaviour).transform.position - reference.position).magnitude;
                 if (distance <= closestDistance)
                 {
                     closestDistance = distance;
+                    if (objects[i] as Interactable)
+                        if ((objects[i] as Interactable).InUse)
+                            return default(T);
                     return objects[i];
                 }
             }
