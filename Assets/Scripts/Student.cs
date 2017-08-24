@@ -32,7 +32,7 @@ public class Student : MonoBehaviour
         GameController.instance.students.Add(this);
 
         pathing = GetComponent<Pathfinding>();
-        walking = new Activity("Walk",new float[] { -0.05f, 0, -0.05f });
+        walking = new Activity("Walk",new float[] { -0.05f, 0, -0.1f });
 
         for (int i = 0; i < (int)studentStats.Count; i++)
             stats[i] = 10;
@@ -130,12 +130,12 @@ public class Student : MonoBehaviour
         {
             if (Money == 0)
                 FindInteractable(InteractableType.Job);
+            else if (Energy < 5 && Energy < Stamina)
+                FindInteractable(InteractableType.FoodSource);
+            else if (Stamina < 5)
+                FindInteractable(InteractableType.Bed);
             else if (CourseWork == 0)
                 FindInteractable(InteractableType.Book);
-            else if (Energy < Stamina && Energy < 5)
-                FindInteractable(InteractableType.FoodSource);
-            else if(Stamina < 5)
-                FindInteractable(InteractableType.Bed);
             else
                 FindInteractable(InteractableType.Desk);
         }
@@ -143,10 +143,14 @@ public class Student : MonoBehaviour
         // If Student has an Activity, do Activity.
         if (currentActivity.Count > 0)
         {
-            if (currentActivity.Peek().isDone(this) == true || pathing.destination == null)
+            Debug.Log(currentActivity.Peek().activityName);
+            if (currentActivity.Peek().isDone(this) == true || !currentObject)
             {
-                currentObject.InUse = null;
-                currentObject = null;
+                if (currentObject)
+                {
+                    currentObject.InUse = null;
+                    currentObject = null;
+                }
                 currentActivity.Dequeue();
             }
         }
@@ -161,66 +165,79 @@ public class Student : MonoBehaviour
     // Find Functions
     void FindInteractable(InteractableType type)
     {
-        float closestDistance = Mathf.Infinity;
-
         Interactable[] objects = GameController.instance.FindOfType(type);
-        if (objects.Length == 0)
+        if (objects.Length == 0 && type != InteractableType.Build)
         {
             Debug.LogWarning("There are not enough " + type);
-            //Build one...
+            if(!FindConstruction(type))
+                BuildRoom(type);
         }
         else
         {
-            for (int i = 0; i < objects.Length; i++)
-            {
-                if (objects[i])
-                {
-                    float distance = (objects[i].transform.position - transform.position).magnitude;
-                    if (distance <= closestDistance)
-                    {
-                        closestDistance = distance;
-                        currentObject = objects[i];
-                    }
-                }
-            }
-
-            if (closestDistance > 0.2f)
-                StartCoroutine(Travel(currentObject));
-            else currentActivity.Enqueue(currentObject.activity);
+            currentObject = GameController.FindClosest(objects, transform);
+            StartCoroutine(Travel(currentObject));
         }
+    }
+
+    public bool FindConstruction(InteractableType type)
+    {
+        Construction[] objects = GameController.instance.FindConstruction(type);
+        if (objects.Length == 0 && type != InteractableType.Build)
+        {
+            Debug.LogWarning("No Construction found for " + type);
+            return false;
+        }
+        else
+        {
+            Construction temp = GameController.FindClosest(objects, transform);
+            Interactable[] jobs = temp.GetComponentsInChildren<Interactable>();
+            StartCoroutine(Travel(GameController.FindClosest(jobs, transform)));
+        }
+        return true;
     }
 
     //Activities
     private IEnumerator Travel(Interactable interactableObject)
     {
-        if (interactableObject.InUse)
+        if (interactableObject)
         {
-            if (GameController.FindCloser(transform, interactableObject.InUse.transform, interactableObject.activityPoint.position) == transform)
-                interactableObject.InUse = this;
-            else yield break;
-        }
-        else interactableObject.InUse = this;
+            if (interactableObject.InUse)
+            {
+                if (GameController.FindCloser(transform, interactableObject.InUse.transform, interactableObject.activityPoint.position) == transform)
+                    interactableObject.InUse = this;
+                else yield break;
+            }
+            else interactableObject.InUse = this;
 
-        pathing.destination = interactableObject.activityPoint;
-        transform.LookAt(transform.position + (pathing.destination.position - transform.position).normalized);
+            pathing.destination = interactableObject.activityPoint;
+            transform.LookAt(transform.position + (pathing.destination.position - transform.position).normalized);
 
-        currentActivity.Enqueue(walking);
-        pathing.MoveTo();
+            currentActivity.Enqueue(walking);
+            pathing.MoveTo();
 
-        bool thereYet = false;
-        while (!thereYet)
-        {
-            if (pathing.AtDestination() || this != interactableObject.InUse)
-                thereYet = true;
-            yield return null;
+            bool thereYet = false;
+            while (!thereYet)
+            {
+                if (pathing.AtDestination() || this != interactableObject.InUse)
+                    thereYet = true;
+                yield return null;
+            }
+            if (currentActivity.Count > 0)
+                currentActivity.Dequeue();
+            if (pathing.AtDestination())
+                currentActivity.Enqueue(interactableObject.activity);
         }
-        if(currentActivity.Count > 0)
-            currentActivity.Dequeue();
-        if (pathing.AtDestination())
-        {
-            transform.rotation = interactableObject.activityPoint.rotation;
-            currentActivity.Enqueue(interactableObject.activity);
-        }
+    }
+
+    public void BuildRoom(InteractableType type)
+    {
+        int roomIndex = (int)type;
+        FindInteractable(InteractableType.Build);
+        if (currentObject)
+            Instantiate
+                (GameController.instance.Rooms[roomIndex], 
+                currentObject.transform.GetChild(0).position, 
+                currentObject.transform.GetChild(0).rotation);
     }
 
     private void Die()

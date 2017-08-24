@@ -16,6 +16,12 @@ public class CameraController : MonoBehaviour
         StartCoroutine(UpdatePosition());
 	}
 
+    private void Update()
+    {
+        if (GameController.instance.students.Count <= 0)
+            StopAllCoroutines();
+    }
+
     private IEnumerator UpdatePosition ()
     {
         elapsedTime = 0;

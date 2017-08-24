@@ -6,10 +6,11 @@ public enum InteractableType
 {
     Bed,
     FoodSource,
-    Desk,
     Job,
+    Desk,
     Book,
     Lab,
+    Build,
     Count,
 }
 
@@ -20,4 +21,26 @@ public class Interactable : MonoBehaviour
 
     public Transform activityPoint;
     public Activity activity;
+
+    private void Start()
+    {
+        GameController.instance.InteractableObjects.Add(this);
+        if (!activityPoint)
+            activityPoint = transform;
+    }
+
+    public void Delete()
+    {
+        Destroy(gameObject);
+    }
+
+    private void OnDisable()
+    {
+        Delete();
+    }
+
+    private void OnDestroy()
+    {
+        GameController.instance.InteractableObjects.Remove(this);
+    }
 }

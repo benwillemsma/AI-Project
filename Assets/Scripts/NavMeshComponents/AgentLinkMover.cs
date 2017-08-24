@@ -36,7 +36,7 @@ public class AgentLinkMover : MonoBehaviour
     {
 		OffMeshLinkData data = agent.currentOffMeshLinkData;
 		Vector3 endpos = data.endPos + Vector3.up * agent.baseOffset;
-		while (agent.transform.position != endpos)
+        while ((agent.transform.position - endpos).magnitude > 0.01f)
         {
 			agent.transform.position = Vector3.MoveTowards (agent.transform.position, endpos, agent.speed * Time.deltaTime);
 			yield return null;
