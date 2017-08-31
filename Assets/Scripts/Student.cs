@@ -20,12 +20,16 @@ public enum studentResources
 public class Student : MonoBehaviour
 {
     #region Student Initilization
-    public List<Course> courses;
     private Pathfinding pathing;
 
     private Interactable currentObject;
     private Queue<Activity> currentActivity = new Queue<Activity>();
     private Activity walking;
+    private Activity pendingActivity = null;
+
+    public Course goalCourse;
+    public Course currentCourse;
+    private Dictionary<Course, bool> passedCourses = new Dictionary<Course, bool>();
 
     private void Start()
     {
@@ -124,8 +128,6 @@ public class Student : MonoBehaviour
         // Base Logic
         if (Energy <= 0)
             Die();
-
-        // If Student does not have a current Activity Assign one.
         else if (currentActivity.Count == 0)
         {
             if (Money == 0)
@@ -139,16 +141,14 @@ public class Student : MonoBehaviour
             else
                 FindInteractable(InteractableType.Desk);
         }
-
-        // If Student has an Activity, do Activity.
-        if (currentActivity.Count > 0)
+        else if (currentActivity.Count > 0)
         {
             Debug.Log(name + ":" + currentActivity.Peek().activityName);
             if (currentActivity.Peek().isDone(this) == true || !currentObject)
             {
                 if (currentObject)
                 {
-                    currentObject.InUse = null;
+                    currentObject.InUse = false;
                     currentObject = null;
                 }
                 currentActivity.Dequeue();
@@ -158,8 +158,32 @@ public class Student : MonoBehaviour
     private void OnDestroy()
     {
         GameController.instance.students.Remove(this);
-        while (courses.Count > 0)
-            courses[0].KickStudent(this);
+        if(currentCourse != null)
+        currentCourse.KickStudent(this);
+    }
+
+    public void AddActivity(Activity newActivity)
+    {
+        pendingActivity = newActivity;
+    }
+
+    // Course Functions
+    public void FindNextCourse()
+    {
+        currentCourse = GetDependency(goalCourse);
+    }
+
+    public Course GetDependency(Course checkCourse)
+    {
+        for (int i = 0; i < checkCourse.Dependencies.Count; i++)
+        {
+            Course temp = GetDependency(checkCourse.Dependencies[i]);
+            if (GetDependency(checkCourse.Dependencies[i]) != null)
+                return temp;
+        }
+        if (passedCourses[goalCourse])
+            return null;
+        else return checkCourse;
     }
 
     // Find Functions
@@ -170,7 +194,10 @@ public class Student : MonoBehaviour
         {
             Debug.Log(name + ":" + "There are not enough " + type);
             if (!FindConstruction(type))
-                BuildRoom(type);
+            {
+                FindInteractable(InteractableType.Build);
+                (currentObject as Job).progress.AddListener(delegate { BuildRoom(type); });
+            }
         }
         else
         {
@@ -202,17 +229,6 @@ public class Student : MonoBehaviour
         if (interactableObject)
         {
             Debug.Log(name + ":" + "travel to " + interactableObject.name);
-            if (interactableObject.InUse)
-            {
-                if (GameController.FindCloser(transform, interactableObject.InUse.transform, interactableObject.activityPoint.position) == transform)
-                    interactableObject.InUse = this;
-                else
-                {
-                    Debug.Log(name + ":" + "travel to " + interactableObject.name);
-                    yield break;
-                }
-            }
-            else interactableObject.InUse = this;
 
             pathing.destination = interactableObject.activityPoint;
             transform.LookAt(transform.position + (pathing.destination.position - transform.position).normalized);
@@ -223,14 +239,17 @@ public class Student : MonoBehaviour
             bool thereYet = false;
             while (!thereYet)
             {
-                if (pathing.AtDestination() || this != interactableObject.InUse)
+                if (pathing.AtDestination() || interactableObject.InUse)
                     thereYet = true;
                 yield return null;
             }
             if (currentActivity.Count > 0)
                 currentActivity.Dequeue();
             if (pathing.AtDestination())
+            {
+                interactableObject.InUse = true;
                 currentActivity.Enqueue(interactableObject.activity);
+            }
         }
     }
 
@@ -239,11 +258,13 @@ public class Student : MonoBehaviour
         int roomIndex = (int)type;
         FindInteractable(InteractableType.Build);
         if (currentObject)
+        {
             Instantiate
                 (GameController.instance.Rooms[roomIndex],
                 currentObject.transform.GetChild(0).position,
                 currentObject.transform.GetChild(0).rotation,
                 currentObject.transform.root);
+        }
     }
 
     private void Die()

@@ -12,7 +12,7 @@ public class StudentEditor : Editor
     {
         statsProp = serializedObject.FindProperty("stats");
         resourcesProp  = serializedObject.FindProperty("resources");
-        courseProp  = serializedObject.FindProperty("courses");
+        courseProp  = serializedObject.FindProperty("currentCourse");
     }
 
     public override void OnInspectorGUI()
@@ -47,17 +47,6 @@ public class StudentEditor : Editor
                     GUILayout.Space(20);
                     GUILayout.Label(resourceNames[i], GUILayout.Width(100));
                     EditorGUILayout.PropertyField(resourcesProp.GetArrayElementAtIndex(i), GUIContent.none);
-                    GUILayout.EndHorizontal();
-                }
-            }
-            if (courseProp.isArray && courseProp.arraySize != 0)
-            {
-                GUILayout.Label("Courses:");
-                for (int i = 0; i < courseProp.arraySize; i++)
-                {
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Space(20);
-                    GUILayout.Label(courseProp.GetArrayElementAtIndex(i).FindPropertyRelative("name").stringValue, GUILayout.Width(150));
                     GUILayout.EndHorizontal();
                 }
             }

@@ -1,62 +1,52 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-[System.Serializable]
 public class Course
 {
-    public string name;
-    public ComputerLab lab;
-    public float courseCost = 10;
+    private List<Course> dependencies = new List<Course>();
+    public List<Course> Dependencies
+    {
+        get { return dependencies; }
+    }
 
     List<Student> students = new List<Student>();
-    Dictionary<Student, float> grades = new Dictionary<Student, float>();
-
-    public Course(string name, ComputerLab lab, float cost, params Student[] students)
+    public Student[] Students
     {
-        this.name = name;
-        this.lab = lab;
-        this.courseCost = cost;
-        for (int i = 0; i < students.Length; i++)
-            this.students.Add(students[i]);
-    }
-    public Course(string name,ComputerLab lab, float cost)
-    {
-        this.name = name;
-        this.lab = lab;
-        this.courseCost = cost;
+        get { return students.ToArray(); }
     }
 
-    public void SetLabCost()
+    public string name;
+    public float courseCost = 10;
+
+    public Course(string name, float cost, params Course[] dependencies)
     {
-        lab.GetComponent<Interactable>().activity.resourcesDelta[0] = courseCost;
+        this.name = name;
+        this.courseCost = cost;
+        this.dependencies.AddRange(dependencies);
+    }
+    public Course(string name, float cost)
+    {
+        this.name = name;
+        this.courseCost = cost;
+    }
+
+    public void GraduateStudent(Student student)
+    {
+        GameController.instance.SchoolReputation += 20;
+        KickStudent(student);
     }
 
     public void EnrollStudent(Student newStudent)
     {
         students.Add(newStudent);
-        newStudent.courses.Add(this);
+        newStudent.currentCourse = this;
     }
     public void KickStudent(Student student)
     {
-        students.Remove(student);
-        student.courses.Remove(this);
-    }
-
-    public void ImproveGrade(Student student,float increase)
-    {
-        GameController.instance.SchoolReputation += 5;
-        grades[student] += increase;
-        for (int i = 0; i < students.Count; i++)
+        if (student && students != null)
         {
-            if (students[i] != student)
-                grades[student] += increase * 0.1f;
+            students.Remove(student);
+            student.currentCourse = null;
         }
-        if (grades[student] >= 100)
-            GraduateStudent(student);
-    }
-    public void GraduateStudent(Student student)
-    {
-        GameController.instance.SchoolReputation += 20;
-        KickStudent(student);
     }
 }

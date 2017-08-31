@@ -6,37 +6,63 @@ using UnityEngine;
 public class ComputerLab : MonoBehaviour
 {
     public float amountPerUse;
-    public bool LabOpen;
+    public bool labOpen;
+
+    Dictionary<Student, float> grades = new Dictionary<Student, float>();
+
+    public Course labCourse = null;
 
     [SerializeField]
     Interactable[] Desks;
+    Interactable openLab;
 
-    private float LabTimeLeft;
-    private Animator anim;
-
-    private void Start()
+    public void Start()
     {
-        anim = GetComponent<Animator>();
+        openLab = GetComponent<Interactable>();
     }
 
     public void Update()
     {
-        LabTimeLeft -= Time.deltaTime;
-
-        //if (LabTimeLeft <= 0)
-            //CloseLab();
+        if (labCourse != null)
+        {
+            if (labCourse.Students.Length * 10 >= labCourse.courseCost)
+            {
+                for (int i = 0; i < labCourse.Students.Length; i++)
+                    labCourse.Students[i].AddActivity(openLab.activity);
+            }
+        }
     }
 
-    public void OpenLab(float duration)
+    public void OpenLab()
     {
-        LabOpen = true;
-        LabTimeLeft = duration;
-        anim.SetBool("Open",true);
+        if (labCourse.courseCost <= 0)
+        {
+            labOpen = true;
+            openLab.InUse = true;
+        }
     }
 
     public void CloseLab()
     {
-        anim.SetBool("Open", false);
-        LabOpen = false;
+        labOpen = false;
+        labCourse = null;
+        openLab.InUse = false;
+    }
+
+    public void ImproveGrade(Student student, float increase)
+    {
+        GameController.instance.SchoolReputation += 5;
+        grades[student] += increase;
+        for (int i = 0; i < labCourse.Students.Length; i++)
+        {
+            if (labCourse.Students[i] != student)
+                grades[student] += increase * 0.1f;
+        }
+        if (grades[student] >= 100)
+        {
+            labCourse.GraduateStudent(student);
+            if (labCourse.Students.Length <= 0)
+                CloseLab();
+        }
     }
 }

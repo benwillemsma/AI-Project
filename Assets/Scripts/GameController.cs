@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 
 public class GameController : MonoBehaviour
@@ -11,7 +12,7 @@ public class GameController : MonoBehaviour
     public List<Construction> ConsructionObjects = new List<Construction>();
 
     public List<Student> students = new List<Student>();
-    public Course[] courses;
+    public Dictionary<string, Course> courses = new Dictionary<string, Course>();
     public GameObject[] Rooms;
 
     [SerializeField, Range(0, 100)]
@@ -32,14 +33,42 @@ public class GameController : MonoBehaviour
 
     private void Start()
     {
-        InteractableObjects.AddRange(FindObjectsOfType<Interactable>());
-
         if (!instance)
             instance = this;
         else
             Destroy(gameObject);
 
+        InteractableObjects.AddRange(FindObjectsOfType<Interactable>());
+        StartCoroutine(InitCourses());
+
         SchoolReputation = schoolRep;
+    }
+
+    private IEnumerator InitCourses()
+    {
+        WWW www = new WWW("https://docs.google.com/spreadsheets/u/0/d/1bp8Roa7rC8mpt6PrdweFRunRiCGHqk2JW0Ymx_GGlEA/export?format=csv&id=1bp8Roa7rC8mpt6PrdweFRunRiCGHqk2JW0Ymx_GGlEA&gid=0");
+        yield return www;
+
+        string[] coursesFromFile = www.text.Split("\n"[0]);
+        List<string[]> CourseLines = new List<string[]>();
+        Course temp;
+
+        for (int i = 1; i < coursesFromFile.Length; i++)
+        {
+            string[] courseData = coursesFromFile[i].Split(","[0]);
+            CourseLines.Add(courseData);
+            float cost;
+            float.TryParse(courseData[1],out cost);
+            temp = new Course(courseData[0], cost);
+            courses.Add(temp.name, temp);
+        }
+
+        for (int i = 0; i < CourseLines.Count; i++)
+            for (int d = 2; d < CourseLines[i].Length; d++)
+            {
+                if (courses.TryGetValue(CourseLines[i][d], out temp))
+                    courses[CourseLines[i][0]].Dependencies.Add(temp);
+            }
     }
 
     private void Update()
@@ -96,22 +125,22 @@ public class GameController : MonoBehaviour
 
     public static T FindClosest<T>(T[] objects, Transform reference)
     {
+        T temp = default(T);
         float closestDistance = Mathf.Infinity;
         for (int i = 0; i < objects.Length; i++)
         {
             if (objects[i] != null)
             {
-                float distance = ((objects[i]as MonoBehaviour).transform.position - reference.position).magnitude;
+                float distance = ((objects[i] as MonoBehaviour).transform.position - reference.position).magnitude;
                 if (distance <= closestDistance)
                 {
                     closestDistance = distance;
-                    if (objects[i] as Interactable)
-                        if ((objects[i] as Interactable).InUse)
-                            return default(T);
-                    return objects[i];
+                    if (objects[i] as Interactable && (objects[i] as Interactable).InUse)
+                        continue;
+                    temp = objects[i];
                 }
             }
         }
-        return default(T);
+        return temp;
     }
 }

@@ -24,7 +24,7 @@ public class Activity
         resourcesDelta.AddRange(newResourcesDelta);
     }
 
-    public void DoActivity(Student studentReference)
+    public virtual void DoActivity(Student studentReference)
     {
         if (oneUse)
         {
@@ -43,35 +43,37 @@ public class Activity
         DoActivity(studentReference);
         bool done = false;
 
-        for (int i = 0; i < statsDelta.Count; i++)
-        {
-            if (statsDelta[i] > 0 && studentReference.stats[i] >= 10)
-            {
-                studentReference.stats[i] = 10;
-                done = true;
-            }
-            else if (statsDelta[i] < 0 && studentReference.stats[i] <= 0)
-            {
-                studentReference.stats[i] = 0;
-                done = true;
-            }
-        }
-        for (int i = 0; i < resourcesDelta.Count; i++)
-        {
-            if (resourcesDelta[i] > 0 && studentReference.resources[i] >= 10)
-            {
-                studentReference.resources[i] = 10;
-                done = true;
-            }
-            else if (resourcesDelta[i] < 0 && studentReference.resources[i] <= 0)
-            {
-                studentReference.resources[i] = 0;
-                done = true;
-            }
-        }
         if (oneUse)
             done = true;
-
+        else
+        {
+            for (int i = 0; i < statsDelta.Count; i++)
+            {
+                if (statsDelta[i] > 0 && studentReference.stats[i] >= 10)
+                {
+                    studentReference.stats[i] = 10;
+                    done = true;
+                }
+                else if (statsDelta[i] < 0 && studentReference.stats[i] <= 0)
+                {
+                    studentReference.stats[i] = 0;
+                    done = true;
+                }
+            }
+            for (int i = 0; i < resourcesDelta.Count; i++)
+            {
+                if (resourcesDelta[i] > 0 && studentReference.resources[i] >= 10)
+                {
+                    studentReference.resources[i] = 10;
+                    done = true;
+                }
+                else if (resourcesDelta[i] < 0 && studentReference.resources[i] <= 0)
+                {
+                    studentReference.resources[i] = 0;
+                    done = true;
+                }
+            }
+        }
         return done;
     }
 }

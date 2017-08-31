@@ -12,10 +12,11 @@ public enum InteractableType
     Count,
 }
 
+[System.Serializable]
 public class Interactable : MonoBehaviour
 {
     public InteractableType type;
-    public Student InUse = null;
+    public bool InUse = false;
 
     public Transform activityPoint;
     public Activity activity;

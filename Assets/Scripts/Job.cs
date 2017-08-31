@@ -8,7 +8,10 @@ public class Job : Interactable
 
     private void Update()
     {
-        if (InUse && (InUse.transform.position - activityPoint.position).magnitude < 0.2f)
+        Debug.Log(InUse);
+        if (InUse == true)
+        {
             progress.Invoke();
+        }
     }
 }
