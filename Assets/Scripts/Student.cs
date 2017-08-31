@@ -26,8 +26,7 @@ public class Student : MonoBehaviour
     private Queue<Activity> currentActivity = new Queue<Activity>();
     private Activity walking;
     private Activity pendingActivity = null;
-
-    public Course goalCourse;
+    
     public Course currentCourse;
     private Dictionary<Course, bool> passedCourses = new Dictionary<Course, bool>();
 
@@ -125,11 +124,13 @@ public class Student : MonoBehaviour
     {
         Happyness = (Energy + Stamina + Money) / 3;
 
+
         // Base Logic
         if (Energy <= 0)
             Die();
         else if (currentActivity.Count == 0)
         {
+            Debug.Log(name + ":" + currentActivity.Count);
             if (Money == 0)
                 FindInteractable(InteractableType.Job);
             else if (Energy < 5 && Energy < Stamina)
@@ -170,18 +171,18 @@ public class Student : MonoBehaviour
     // Course Functions
     public void FindNextCourse()
     {
-        currentCourse = GetDependency(goalCourse);
+        currentCourse = GetDependency(GameController.goalCourse);
     }
 
     public Course GetDependency(Course checkCourse)
     {
-        for (int i = 0; i < checkCourse.Dependencies.Count; i++)
+        for (int i = 0; i < checkCourse.PreReq.Count; i++)
         {
-            Course temp = GetDependency(checkCourse.Dependencies[i]);
-            if (GetDependency(checkCourse.Dependencies[i]) != null)
+            Course temp = GetDependency(checkCourse.PreReq[i]);
+            if (GetDependency(checkCourse.PreReq[i]) != null)
                 return temp;
         }
-        if (passedCourses[goalCourse])
+        if (passedCourses[GameController.goalCourse])
             return null;
         else return checkCourse;
     }
@@ -192,11 +193,15 @@ public class Student : MonoBehaviour
         Interactable[] objects = GameController.instance.FindInteractable(type);
         if (objects.Length == 0 && type != InteractableType.Build)
         {
-            Debug.Log(name + ":" + "There are not enough " + type);
             if (!FindConstruction(type))
             {
                 FindInteractable(InteractableType.Build);
-                (currentObject as Job).progress.AddListener(delegate { BuildRoom(type); });
+
+                if (currentObject)
+                {
+                    (currentObject as Job).progress.Invoke();
+                    GameController.instance.BuildRoom(type, currentObject.transform);
+                }
             }
         }
         else
@@ -211,7 +216,6 @@ public class Student : MonoBehaviour
         Construction[] objects = GameController.instance.FindConstruction(type);
         if (objects.Length == 0 && type != InteractableType.Build)
         {
-            Debug.Log(name + ":" + "No Construction found for " + type);
             return false;
         }
         else
@@ -228,7 +232,6 @@ public class Student : MonoBehaviour
     {
         if (interactableObject)
         {
-            Debug.Log(name + ":" + "travel to " + interactableObject.name);
 
             pathing.destination = interactableObject.activityPoint;
             transform.LookAt(transform.position + (pathing.destination.position - transform.position).normalized);
@@ -250,20 +253,6 @@ public class Student : MonoBehaviour
                 interactableObject.InUse = true;
                 currentActivity.Enqueue(interactableObject.activity);
             }
-        }
-    }
-
-    public void BuildRoom(InteractableType type)
-    {
-        int roomIndex = (int)type;
-        FindInteractable(InteractableType.Build);
-        if (currentObject)
-        {
-            Instantiate
-                (GameController.instance.Rooms[roomIndex],
-                currentObject.transform.GetChild(0).position,
-                currentObject.transform.GetChild(0).rotation,
-                currentObject.transform.root);
         }
     }
 

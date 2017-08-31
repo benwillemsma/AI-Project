@@ -7,6 +7,8 @@ public class GameController : MonoBehaviour
     public static GameController instance;
 
     public GameObject studentPrefab;
+    public static Course goalCourse;
+    private bool[,] roomGrid = new bool[21, 21];
 
     public List<Interactable> InteractableObjects = new List<Interactable>();
     public List<Construction> ConsructionObjects = new List<Construction>();
@@ -67,7 +69,7 @@ public class GameController : MonoBehaviour
             for (int d = 2; d < CourseLines[i].Length; d++)
             {
                 if (courses.TryGetValue(CourseLines[i][d], out temp))
-                    courses[CourseLines[i][0]].Dependencies.Add(temp);
+                    courses[CourseLines[i][0]].PreReq.Add(temp);
             }
     }
 
@@ -89,6 +91,26 @@ public class GameController : MonoBehaviour
     public void CreateStudent()
     {
         Instantiate(studentPrefab, Vector3.zero, Quaternion.identity);
+    }
+
+    public void BuildRoom(InteractableType type, Transform point)
+    {
+        int roomIndex = (int)type;
+
+        Vector3 spawnLocation = point.GetChild(0).position;
+        spawnLocation.x = Mathf.Round(spawnLocation.x / 15);
+        spawnLocation.z = Mathf.Round(spawnLocation.z / 15);
+        
+        if (!roomGrid[(int)spawnLocation.x + 11, (int)spawnLocation.z + 11])
+        {
+            roomGrid[(int)spawnLocation.x + 11, (int)spawnLocation.z + 11] = true;
+
+            if (FindConstruction(type).Length <= 0)
+            {
+                Instantiate
+                    (Rooms[roomIndex], spawnLocation * 15, point.GetChild(0).rotation, point.root);
+            }
+        }
     }
 
     public Interactable[] FindInteractable(InteractableType type)
@@ -129,7 +151,7 @@ public class GameController : MonoBehaviour
         float closestDistance = Mathf.Infinity;
         for (int i = 0; i < objects.Length; i++)
         {
-            if (objects[i] != null)
+            if (!objects[i].Equals(null))
             {
                 float distance = ((objects[i] as MonoBehaviour).transform.position - reference.position).magnitude;
                 if (distance <= closestDistance)

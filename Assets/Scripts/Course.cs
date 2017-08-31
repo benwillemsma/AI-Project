@@ -3,10 +3,10 @@ using UnityEngine;
 
 public class Course
 {
-    private List<Course> dependencies = new List<Course>();
-    public List<Course> Dependencies
+    private List<Course> preReq = new List<Course>();
+    public List<Course> PreReq
     {
-        get { return dependencies; }
+        get { return preReq; }
     }
 
     List<Student> students = new List<Student>();
@@ -18,16 +18,23 @@ public class Course
     public string name;
     public float courseCost = 10;
 
-    public Course(string name, float cost, params Course[] dependencies)
+    public Course(string name, float cost, params Course[] preReq)
     {
         this.name = name;
         this.courseCost = cost;
-        this.dependencies.AddRange(dependencies);
+        this.preReq.AddRange(preReq);
     }
     public Course(string name, float cost)
     {
         this.name = name;
         this.courseCost = cost;
+    }
+
+    public Course(Course refCourse)
+    {
+        this.name = refCourse.name;
+        this.courseCost = refCourse.courseCost;
+        this.preReq = refCourse.preReq;
     }
 
     public void GraduateStudent(Student student)

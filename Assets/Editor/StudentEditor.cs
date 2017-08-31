@@ -6,13 +6,11 @@ public class StudentEditor : Editor
 {
     SerializedProperty statsProp;
     SerializedProperty resourcesProp;
-    SerializedProperty courseProp;
 
     public void OnEnable()
     {
         statsProp = serializedObject.FindProperty("stats");
         resourcesProp  = serializedObject.FindProperty("resources");
-        courseProp  = serializedObject.FindProperty("currentCourse");
     }
 
     public override void OnInspectorGUI()

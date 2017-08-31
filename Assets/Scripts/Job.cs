@@ -8,10 +8,7 @@ public class Job : Interactable
 
     private void Update()
     {
-        Debug.Log(InUse);
         if (InUse == true)
-        {
             progress.Invoke();
-        }
     }
 }

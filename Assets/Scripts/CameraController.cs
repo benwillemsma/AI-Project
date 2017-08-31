@@ -5,14 +5,14 @@ using UnityEngine;
 public class CameraController : MonoBehaviour
 {
     public Vector3 offset;
-    public Transform target;
+    private Transform target;
 
     private int targetIndex = 0;
     private float elapsedTime = 0;
 
-    void Start ()
+    private void Start ()
     {
-        target = GameController.instance.students[targetIndex].transform;
+        target = GameController.instance.students[0].transform;
         StartCoroutine(UpdatePosition());
 	}
 
