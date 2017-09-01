@@ -6,6 +6,7 @@ public class GameController : MonoBehaviour
 {
     public static GameController instance;
 
+    public GameObject StudentSpawn;
     public GameObject studentPrefab;
     public static Course goalCourse;
     private bool[,] roomGrid = new bool[21, 21];
@@ -16,6 +17,8 @@ public class GameController : MonoBehaviour
     public List<Student> students = new List<Student>();
     public Dictionary<string, Course> courses = new Dictionary<string, Course>();
     public GameObject[] Rooms;
+
+    private float elapsedTime = 0;
 
     [SerializeField, Range(0, 100)]
     private float schoolRep;
@@ -75,6 +78,13 @@ public class GameController : MonoBehaviour
 
     private void Update()
     {
+        elapsedTime += Time.deltaTime;
+        if(students.Count < 20 && elapsedTime >= 5)
+        {
+            elapsedTime = 0;
+            Instantiate(studentPrefab, StudentSpawn.transform.position, StudentSpawn.transform.rotation, StudentSpawn.transform);
+        }
+
         if (Input.GetKeyDown(KeyCode.KeypadPlus))
         {
             Time.timeScale += 1f;
@@ -151,14 +161,12 @@ public class GameController : MonoBehaviour
         float closestDistance = Mathf.Infinity;
         for (int i = 0; i < objects.Length; i++)
         {
-            if (!objects[i].Equals(null))
+            if (!objects[i].Equals(null) || (objects[i] as Interactable && !(objects[i] as Interactable).InUse))
             {
                 float distance = ((objects[i] as MonoBehaviour).transform.position - reference.position).magnitude;
                 if (distance <= closestDistance)
                 {
                     closestDistance = distance;
-                    if (objects[i] as Interactable && (objects[i] as Interactable).InUse)
-                        continue;
                     temp = objects[i];
                 }
             }

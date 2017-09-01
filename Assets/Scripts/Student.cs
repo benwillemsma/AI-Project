@@ -124,7 +124,6 @@ public class Student : MonoBehaviour
     {
         Happyness = (Energy + Stamina + Money) / 3;
 
-
         // Base Logic
         if (Energy <= 0)
             Die();
@@ -190,6 +189,7 @@ public class Student : MonoBehaviour
     // Find Functions
     void FindInteractable(InteractableType type)
     {
+        Debug.Log("CourseWork");
         Interactable[] objects = GameController.instance.FindInteractable(type);
         if (objects.Length == 0 && type != InteractableType.Build)
         {

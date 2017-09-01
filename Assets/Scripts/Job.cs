@@ -9,6 +9,8 @@ public class Job : Interactable
     private void Update()
     {
         if (InUse == true)
+        {
             progress.Invoke();
+        }
     }
 }

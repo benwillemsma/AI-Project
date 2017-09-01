@@ -36,17 +36,17 @@ public class Construction : MonoBehaviour
 	
 	IEnumerator UpdatePhase ()
     {
+        hasBeenWorkedOn = true;
         if (completion >= 100)
         {
+            Debug.Log(gameObject.name);
             GameObject go = Instantiate(FinishedProduct, transform.position, transform.rotation, transform.parent);
             go.transform.Translate(Vector3.forward * 0.0001f);
             Destroy(gameObject);
         }
         else
         {
-            hasBeenWorkedOn = true;
             yield return new WaitForEndOfFrame();
-            hasBeenWorkedOn = false;
 
             ConstructionPhase = Mathf.RoundToInt(completion / 100 * (Foundation.Length + Phases.Length - 1));
 
@@ -61,6 +61,7 @@ public class Construction : MonoBehaviour
                 for (int i = 0; i < Phases.Length; i++)
                     Phases[i].SetActive(ConstructionPhase == i || ConstructionPhase == i + 1);
             }
+            hasBeenWorkedOn = false;
         }
-	}
+    }
 }

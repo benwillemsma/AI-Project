@@ -10,16 +10,15 @@ public class CameraController : MonoBehaviour
     private int targetIndex = 0;
     private float elapsedTime = 0;
 
-    private void Start ()
-    {
-        target = GameController.instance.students[0].transform;
-        StartCoroutine(UpdatePosition());
-	}
-
     private void Update()
     {
         if (GameController.instance.students.Count <= 0)
             StopAllCoroutines();
+        else if(target == null)
+        {
+            target = GameController.instance.students[0].transform;
+            StartCoroutine(UpdatePosition());
+        }
     }
 
     private IEnumerator UpdatePosition ()

@@ -13,6 +13,7 @@ public class Pathfinding : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         agent.updateRotation = false;
+        agent.avoidancePriority = Random.Range(1, 100);
     }
 
     public void MoveTo()

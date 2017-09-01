@@ -21,6 +21,8 @@ public class Interactable : MonoBehaviour
     public Transform activityPoint;
     public Activity activity;
 
+    private float UseTime = 0;
+
     private void Start()
     {
         GameController.instance.InteractableObjects.Add(this);
@@ -30,6 +32,17 @@ public class Interactable : MonoBehaviour
                 activityPoint = transform.GetChild(0);
             else
                 activityPoint = transform;
+        }
+    }
+
+    private void Update()
+    {
+        if (InUse)
+            UseTime += Time.deltaTime;
+        if (UseTime >= 11)
+        {
+            InUse = false;
+            UseTime = 0;
         }
     }
 
