@@ -29,6 +29,7 @@ public class Student : MonoBehaviour
     
     public Course currentCourse;
     private Dictionary<Course, bool> passedCourses = new Dictionary<Course, bool>();
+    private bool waiting;
 
     private void Start()
     {
@@ -41,6 +42,8 @@ public class Student : MonoBehaviour
             stats[i] = 10;
         for (int i = 0; i < (int)studentResources.Count; i++)
             resources.Add(0);
+
+        FindNextCourse();
     }
     #endregion
 
@@ -129,21 +132,19 @@ public class Student : MonoBehaviour
             Die();
         else if (currentActivity.Count == 0)
         {
-            Debug.Log(name + ":" + currentActivity.Count);
             if (Money == 0)
                 FindInteractable(InteractableType.Job);
             else if (Energy < 5 && Energy < Stamina)
                 FindInteractable(InteractableType.FoodSource);
             else if (Stamina < 5)
                 FindInteractable(InteractableType.Bed);
-            else if (CourseWork == 0)
+            else if(CourseWork == 0)
                 FindInteractable(InteractableType.Book);
             else
                 FindInteractable(InteractableType.Desk);
         }
         else if (currentActivity.Count > 0)
         {
-            Debug.Log(name + ":" + currentActivity.Peek().activityName);
             if (currentActivity.Peek().isDone(this) == true || !currentObject)
             {
                 if (currentObject)
@@ -171,28 +172,33 @@ public class Student : MonoBehaviour
     public void FindNextCourse()
     {
         currentCourse = GetDependency(GameController.goalCourse);
+        Debug.Log(currentCourse.name);
     }
 
     public Course GetDependency(Course checkCourse)
     {
-        for (int i = 0; i < checkCourse.PreReq.Count; i++)
+        if (checkCourse.PreReq.Count > 0)
         {
-            Course temp = GetDependency(checkCourse.PreReq[i]);
-            if (GetDependency(checkCourse.PreReq[i]) != null)
-                return temp;
+            for (int i = 0; i < checkCourse.PreReq.Count; i++)
+            {
+                Course temp = GetDependency(checkCourse.PreReq[i]);
+                if (GetDependency(checkCourse.PreReq[i]) != null)
+                    return temp;
+            }
+            if (passedCourses[GameController.goalCourse])
+                return null;
+            else return checkCourse;
         }
-        if (passedCourses[GameController.goalCourse])
-            return null;
         else return checkCourse;
     }
 
     // Find Functions
     void FindInteractable(InteractableType type)
     {
-        Debug.Log("CourseWork");
         Interactable[] objects = GameController.instance.FindInteractable(type);
         if (objects.Length == 0 && type != InteractableType.Build)
         {
+            Debug.Log(type);
             if (!FindConstruction(type))
             {
                 FindInteractable(InteractableType.Build);
@@ -228,13 +234,11 @@ public class Student : MonoBehaviour
     }
 
     //Activities
-    private IEnumerator Travel(Interactable interactableObject)
+    private IEnumerator Travel(Interactable Object)
     {
-        if (interactableObject)
+        if (Object)
         {
-
-            pathing.destination = interactableObject.activityPoint;
-            transform.LookAt(transform.position + (pathing.destination.position - transform.position).normalized);
+            pathing.destination = Object.activityPoint.position;
 
             currentActivity.Enqueue(walking);
             pathing.MoveTo();
@@ -242,7 +246,7 @@ public class Student : MonoBehaviour
             bool thereYet = false;
             while (!thereYet)
             {
-                if (pathing.AtDestination() || interactableObject.InUse)
+                if (pathing.AtDestination() || Object.InUse)
                     thereYet = true;
                 yield return null;
             }
@@ -250,8 +254,8 @@ public class Student : MonoBehaviour
                 currentActivity.Dequeue();
             if (pathing.AtDestination())
             {
-                interactableObject.InUse = true;
-                currentActivity.Enqueue(interactableObject.activity);
+                Object.InUse = true;
+                currentActivity.Enqueue(Object.activity);
             }
         }
     }

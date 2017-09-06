@@ -11,15 +11,6 @@ public class GameController : MonoBehaviour
     public static Course goalCourse;
     private bool[,] roomGrid = new bool[21, 21];
 
-    public List<Interactable> InteractableObjects = new List<Interactable>();
-    public List<Construction> ConsructionObjects = new List<Construction>();
-
-    public List<Student> students = new List<Student>();
-    public Dictionary<string, Course> courses = new Dictionary<string, Course>();
-    public GameObject[] Rooms;
-
-    private float elapsedTime = 0;
-
     [SerializeField, Range(0, 100)]
     private float schoolRep;
     public float SchoolReputation
@@ -36,7 +27,14 @@ public class GameController : MonoBehaviour
         }
     }
 
-    private void Start()
+    public List<Interactable> InteractableObjects = new List<Interactable>();
+    public List<Construction> ConsructionObjects = new List<Construction>();
+
+    public List<Student> students = new List<Student>();
+    public Dictionary<string, Course> courses = new Dictionary<string, Course>();
+    public GameObject[] Rooms;
+
+    private IEnumerator Start()
     {
         if (!instance)
             instance = this;
@@ -44,9 +42,12 @@ public class GameController : MonoBehaviour
             Destroy(gameObject);
 
         InteractableObjects.AddRange(FindObjectsOfType<Interactable>());
-        StartCoroutine(InitCourses());
+        yield return StartCoroutine(InitCourses());
 
-        SchoolReputation = schoolRep;
+        goalCourse = courses["Course_5Z"];
+        Instantiate(studentPrefab, StudentSpawn.transform.position, StudentSpawn.transform.rotation, StudentSpawn.transform);
+        //Instantiate(studentPrefab, StudentSpawn.transform.position + Vector3.right, StudentSpawn.transform.rotation, StudentSpawn.transform);
+        //Instantiate(studentPrefab, StudentSpawn.transform.position - Vector3.right, StudentSpawn.transform.rotation, StudentSpawn.transform);
     }
 
     private IEnumerator InitCourses()
@@ -78,13 +79,6 @@ public class GameController : MonoBehaviour
 
     private void Update()
     {
-        elapsedTime += Time.deltaTime;
-        if(students.Count < 20 && elapsedTime >= 5)
-        {
-            elapsedTime = 0;
-            Instantiate(studentPrefab, StudentSpawn.transform.position, StudentSpawn.transform.rotation, StudentSpawn.transform);
-        }
-
         if (Input.GetKeyDown(KeyCode.KeypadPlus))
         {
             Time.timeScale += 1f;

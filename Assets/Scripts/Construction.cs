@@ -7,7 +7,6 @@ public class Construction : MonoBehaviour
     int ConstructionPhase;
 
     public InteractableType type;
-    [Space(20)]
     public GameObject[] Foundation;
     public GameObject[] Phases;
     [Space(20)]
@@ -29,7 +28,8 @@ public class Construction : MonoBehaviour
 
     public void WorkOnProject(int completionDelta)
     {
-        completion += completionDelta * Time.deltaTime; // completionDelta = Percent of Work to be Done in one second
+        // completionDelta = Percent of Work to be Done in one second
+        completion += completionDelta * Time.deltaTime; 
         if (hasBeenWorkedOn == false)
             StartCoroutine(UpdatePhase());
     }
@@ -39,7 +39,6 @@ public class Construction : MonoBehaviour
         hasBeenWorkedOn = true;
         if (completion >= 100)
         {
-            Debug.Log(gameObject.name);
             GameObject go = Instantiate(FinishedProduct, transform.position, transform.rotation, transform.parent);
             go.transform.Translate(Vector3.forward * 0.0001f);
             Destroy(gameObject);

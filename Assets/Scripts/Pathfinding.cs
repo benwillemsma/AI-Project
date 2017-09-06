@@ -7,7 +7,7 @@ using UnityEngine.AI;
 public class Pathfinding : MonoBehaviour
 {
     private NavMeshAgent agent;
-    public Transform destination;
+    public Vector3 destination;
 
     private void Awake()
     {
@@ -18,14 +18,14 @@ public class Pathfinding : MonoBehaviour
 
     public void MoveTo()
     {
-        agent.SetDestination(destination.position);
+        agent.SetDestination(destination);
     }
 
     public bool AtDestination()
     {
-        if (destination)
+        if (destination != Vector3.zero)
         {
-            if ((transform.position - destination.position).magnitude < 0.2f)
+            if ((transform.position - destination).magnitude < 0.2f)
                 return true;
             else return false;
         }

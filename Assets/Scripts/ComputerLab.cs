@@ -14,31 +14,20 @@ public class ComputerLab : MonoBehaviour
 
     [SerializeField]
     Interactable[] Desks;
-    Interactable openLab;
+    Interactable door;
 
     public void Start()
     {
-        openLab = GetComponent<Interactable>();
+        door = GetComponent<Interactable>();
     }
 
-    public void Update()
+    public void OpenLab(Course newCourse)
     {
-        if (labCourse != null)
-        {
-            if (labCourse.Students.Length * 10 >= labCourse.courseCost)
-            {
-                for (int i = 0; i < labCourse.Students.Length; i++)
-                    labCourse.Students[i].AddActivity(openLab.activity);
-            }
-        }
-    }
-
-    public void OpenLab()
-    {
+        labCourse = newCourse;
         if (labCourse.courseCost <= 0)
         {
             labOpen = true;
-            openLab.InUse = true;
+            door.InUse = true;
         }
     }
 
@@ -46,7 +35,7 @@ public class ComputerLab : MonoBehaviour
     {
         labOpen = false;
         labCourse = null;
-        openLab.InUse = false;
+        door.InUse = false;
     }
 
     public void ImproveGrade(Student student, float increase)
