@@ -12,11 +12,11 @@ public class CameraController : MonoBehaviour
 
     private void Update()
     {
-        if (GameController.instance.students.Count <= 0)
+        if (Manager.instance.students.Count <= 0)
             StopAllCoroutines();
         else if(target == null)
         {
-            target = GameController.instance.students[0].transform;
+            target = Manager.instance.students[0].transform;
             StartCoroutine(UpdatePosition());
         }
     }
@@ -30,12 +30,12 @@ public class CameraController : MonoBehaviour
             elapsedTime += Time.deltaTime;
             yield return null;
         }
-        StartCoroutine(Changetarget(GameController.instance.students[FindNextTarget()].transform));
+        StartCoroutine(Changetarget(Manager.instance.students[FindNextTarget()].transform));
     }
 
     private int FindNextTarget()
     {
-        return (targetIndex++) % GameController.instance.students.Count;
+        return (targetIndex++) % Manager.instance.students.Count;
     }
 
     private IEnumerator Changetarget(Transform newTarget)

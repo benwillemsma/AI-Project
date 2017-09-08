@@ -2,13 +2,17 @@
 using System.Collections;
 using UnityEngine;
 
-public class GameController : MonoBehaviour
+public class Manager : MonoBehaviour
 {
-    public static GameController instance;
+    public static Manager instance;
 
+    public int startingStudents;
     public GameObject StudentSpawn;
     public GameObject studentPrefab;
+    private int studentID = 0;
+
     public static Course goalCourse;
+
     private bool[,] roomGrid = new bool[21, 21];
 
     [SerializeField, Range(0, 100)]
@@ -43,11 +47,28 @@ public class GameController : MonoBehaviour
 
         InteractableObjects.AddRange(FindObjectsOfType<Interactable>());
         yield return StartCoroutine(InitCourses());
+        roomGrid[11, 11] = true;
 
         goalCourse = courses["Course_5Z"];
-        Instantiate(studentPrefab, StudentSpawn.transform.position, StudentSpawn.transform.rotation, StudentSpawn.transform);
-        //Instantiate(studentPrefab, StudentSpawn.transform.position + Vector3.right, StudentSpawn.transform.rotation, StudentSpawn.transform);
-        //Instantiate(studentPrefab, StudentSpawn.transform.position - Vector3.right, StudentSpawn.transform.rotation, StudentSpawn.transform);
+
+        if (startingStudents > 0)
+        {
+            for (int i = 0; i < startingStudents; i++)
+            {
+                CreateStudent();
+                yield return new WaitForSeconds(0.5f);
+            }
+        }
+        else StartCoroutine(NeverStopAddingStudents());
+    }
+
+    private IEnumerator NeverStopAddingStudents()
+    {
+        while (true)
+        {
+            CreateStudent();
+            yield return new WaitForSeconds(5f);
+        }
     }
 
     private IEnumerator InitCourses()
@@ -94,27 +115,25 @@ public class GameController : MonoBehaviour
 
     public void CreateStudent()
     {
-        Instantiate(studentPrefab, Vector3.zero, Quaternion.identity);
+        GameObject newStudent = Instantiate(studentPrefab, StudentSpawn.transform.position, StudentSpawn.transform.rotation, StudentSpawn.transform);
+        newStudent.name = "Student_" + studentID;
+        studentID++;
     }
 
-    public void BuildRoom(InteractableType type, Transform point)
+    public Interactable BuildRoom(InteractableType type, Transform point)
     {
         int roomIndex = (int)type;
 
         Vector3 spawnLocation = point.GetChild(0).position;
         spawnLocation.x = Mathf.Round(spawnLocation.x / 15);
         spawnLocation.z = Mathf.Round(spawnLocation.z / 15);
-        
+
         if (!roomGrid[(int)spawnLocation.x + 11, (int)spawnLocation.z + 11])
         {
             roomGrid[(int)spawnLocation.x + 11, (int)spawnLocation.z + 11] = true;
-
-            if (FindConstruction(type).Length <= 0)
-            {
-                Instantiate
-                    (Rooms[roomIndex], spawnLocation * 15, point.GetChild(0).rotation, point.root);
-            }
+            return Instantiate(Rooms[roomIndex], spawnLocation * 15, point.GetChild(0).rotation, point.root).GetComponentInChildren<Interactable>();
         }
+        return null;
     }
 
     public Interactable[] FindInteractable(InteractableType type)
@@ -149,13 +168,32 @@ public class GameController : MonoBehaviour
             return ObjectTwo;
     }
 
+    public static Interactable FindClosest(Interactable[] objects, Transform reference)
+    {
+        Interactable temp = null;
+        float closestDistance = Mathf.Infinity;
+        for (int i = 0; i < objects.Length; i++)
+        {
+            if (!objects[i].Equals(null) && !objects[i].InUse)
+            {
+                float distance = ((objects[i] as MonoBehaviour).transform.position - reference.position).magnitude;
+                if (distance <= closestDistance)
+                {
+                    closestDistance = distance;
+                    temp = objects[i];
+                }
+            }
+        }
+        return temp;
+    }
+
     public static T FindClosest<T>(T[] objects, Transform reference)
     {
         T temp = default(T);
         float closestDistance = Mathf.Infinity;
         for (int i = 0; i < objects.Length; i++)
         {
-            if (!objects[i].Equals(null) || (objects[i] as Interactable && !(objects[i] as Interactable).InUse))
+            if (!objects[i].Equals(null))
             {
                 float distance = ((objects[i] as MonoBehaviour).transform.position - reference.position).magnitude;
                 if (distance <= closestDistance)

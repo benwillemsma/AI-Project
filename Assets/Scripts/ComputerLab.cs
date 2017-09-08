@@ -40,7 +40,7 @@ public class ComputerLab : MonoBehaviour
 
     public void ImproveGrade(Student student, float increase)
     {
-        GameController.instance.SchoolReputation += 5;
+        Manager.instance.SchoolReputation += 5;
         grades[student] += increase;
         for (int i = 0; i < labCourse.Students.Length; i++)
         {

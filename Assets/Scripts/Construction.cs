@@ -18,12 +18,12 @@ public class Construction : MonoBehaviour
 
     private void Start()
     {
-        GameController.instance.ConsructionObjects.Add(this);
+        Manager.instance.ConsructionObjects.Add(this);
     }
 
     private void OnDestroy()
     {
-        GameController.instance.ConsructionObjects.Remove(this);
+        Manager.instance.ConsructionObjects.Remove(this);
     }
 
     public void WorkOnProject(int completionDelta)

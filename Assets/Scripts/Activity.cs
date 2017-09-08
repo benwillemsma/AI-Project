@@ -24,27 +24,21 @@ public class Activity
         resourcesDelta.AddRange(newResourcesDelta);
     }
 
-    public virtual void DoActivity(Student studentReference)
+    public Activity(string name, bool oneUse, float[] newStatsDeltas, params float[] newResourcesDelta)
     {
-        if (oneUse)
-        {
-            studentReference.changeStatsDirect(statsDelta.ToArray());
-            studentReference.changeResourcesDirect(resourcesDelta.ToArray());
-        }
-        else
-        {   
-            studentReference.changeStats(statsDelta.ToArray());
-            studentReference.changeResources(resourcesDelta.ToArray());
-        }
+        this.oneUse = oneUse;
+        activityName = name;
+        statsDelta.AddRange(newStatsDeltas);
+        resourcesDelta.AddRange(newResourcesDelta);
     }
 
     public bool isDone(Student studentReference)
     {
-        DoActivity(studentReference);
         bool done = false;
-
         if (oneUse)
+        {
             done = true;
+        }
         else
         {
             for (int i = 0; i < statsDelta.Count; i++)

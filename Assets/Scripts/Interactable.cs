@@ -19,30 +19,16 @@ public class Interactable : MonoBehaviour
     public bool InUse = false;
 
     public Transform activityPoint;
-    public Activity activity;
-
-    private float UseTime = 0;
 
     private void Start()
     {
-        GameController.instance.InteractableObjects.Add(this);
+        Manager.instance.InteractableObjects.Add(this);
         if (!activityPoint)
         {
             if (transform.GetChild(0))
                 activityPoint = transform.GetChild(0);
             else
                 activityPoint = transform;
-        }
-    }
-
-    private void Update()
-    {
-        if (InUse)
-            UseTime += Time.deltaTime;
-        if (UseTime >= 11)
-        {
-            InUse = false;
-            UseTime = 0;
         }
     }
 
@@ -58,6 +44,6 @@ public class Interactable : MonoBehaviour
 
     private void OnDestroy()
     {
-        GameController.instance.InteractableObjects.Remove(this);
+        Manager.instance.InteractableObjects.Remove(this);
     }
 }

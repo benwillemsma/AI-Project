@@ -22,28 +22,46 @@ public class Student : MonoBehaviour
     #region Student Initilization
     private Pathfinding pathing;
 
-    private Interactable currentObject;
-    private Queue<Activity> currentActivity = new Queue<Activity>();
-    private Activity walking;
-    private Activity pendingActivity = null;
-    
+    private Interactable currentInteractable;
+    private Stack<IEnumerator> currentState = new Stack<IEnumerator>();
+
     public Course currentCourse;
     private Dictionary<Course, bool> passedCourses = new Dictionary<Course, bool>();
-    private bool waiting;
+
+    private static bool initActivities = true;
+    private static Activity Wait;
+    private static Activity Walk;
+    private static Activity Eat;
+    private static Activity Sleep;
+    private static Activity Read;
+    private static Activity Study;
+    private static Activity Work;
 
     private void Start()
     {
-        GameController.instance.students.Add(this);
-
+        Manager.instance.students.Add(this);
         pathing = GetComponent<Pathfinding>();
-        walking = new Activity("Walk",new float[] { -0.05f, 0, -0.1f });
 
-        for (int i = 0; i < (int)studentStats.Count; i++)
-            stats[i] = 10;
-        for (int i = 0; i < (int)studentResources.Count; i++)
-            resources.Add(0);
-
+        if (initActivities)
+            InitActivities();
         FindNextCourse();
+
+        currentState.Push(AddWait());
+    }
+
+    private void InitActivities()
+    {
+        Wait = new Activity("Waiting", new float[] { -0.1f, 0, -0.5f });
+        Walk = new Activity("Walking", new float[] { -0.1f, 0, -0.5f });
+
+        Sleep = new Activity("Sleeping", new float[] { 0, 0, 1f });
+        Eat = new Activity("Eating", new float[] { 1f, 0, 0 }, new float[] { -0.5f, 0 });
+        Work = new Activity("Working", new float[] { -0.1f, 0, -0.5f }, new float[] { 1, 0 });
+
+        Read = new Activity("Reading", new float[] { -0.1f, 0, -0.5f }, new float[] { 0, 1 });
+        Study = new Activity("Studying", new float[] { -0.1f, 0, -0.5f }, new float[] { 0, -1 });
+
+        initActivities = false;
     }
     #endregion
 
@@ -126,56 +144,51 @@ public class Student : MonoBehaviour
     private void Update()
     {
         Happyness = (Energy + Stamina + Money) / 3;
-
-        // Base Logic
         if (Energy <= 0)
             Die();
-        else if (currentActivity.Count == 0)
+
+        if (currentState.Count < 2)
         {
-            if (Money == 0)
-                FindInteractable(InteractableType.Job);
+            if (Money <= 0)
+                AddState(Work, InteractableType.Job);
             else if (Energy < 5 && Energy < Stamina)
-                FindInteractable(InteractableType.FoodSource);
+                AddState(Eat, InteractableType.FoodSource);
             else if (Stamina < 5)
-                FindInteractable(InteractableType.Bed);
-            else if(CourseWork == 0)
-                FindInteractable(InteractableType.Book);
+                AddState(Sleep, InteractableType.Bed);
+            else if (CourseWork <= 0)
+                AddState(Read, InteractableType.Book);
             else
-                FindInteractable(InteractableType.Desk);
+                AddState(Study, InteractableType.Desk);
         }
-        else if (currentActivity.Count > 0)
+
+        if (currentState.Count > 0)
         {
-            if (currentActivity.Peek().isDone(this) == true || !currentObject)
+            //Debug.Log(gameObject.name + ":  :" + currentState.Count + ":  :" + currentState.Peek() + ":  :" + currentInteractable);
+            if (!currentState.Peek().MoveNext() || !currentInteractable)
             {
-                if (currentObject)
+                currentState.Pop();
+                if (currentInteractable)
                 {
-                    currentObject.InUse = false;
-                    currentObject = null;
+                    currentInteractable.InUse = false;
+                    currentInteractable = null;
                 }
-                currentActivity.Dequeue();
             }
         }
     }
     private void OnDestroy()
     {
-        GameController.instance.students.Remove(this);
+        Manager.instance.students.Remove(this);
         if(currentCourse != null)
-        currentCourse.KickStudent(this);
-    }
-
-    public void AddActivity(Activity newActivity)
-    {
-        pendingActivity = newActivity;
+            currentCourse.KickStudent(this);
     }
 
     // Course Functions
-    public void FindNextCourse()
+    private void FindNextCourse()
     {
-        currentCourse = GetDependency(GameController.goalCourse);
-        Debug.Log(currentCourse.name);
+        currentCourse = GetDependency(Manager.goalCourse);
     }
 
-    public Course GetDependency(Course checkCourse)
+    private Course GetDependency(Course checkCourse)
     {
         if (checkCourse.PreReq.Count > 0)
         {
@@ -185,84 +198,138 @@ public class Student : MonoBehaviour
                 if (GetDependency(checkCourse.PreReq[i]) != null)
                     return temp;
             }
-            if (passedCourses[GameController.goalCourse])
+            if (passedCourses[Manager.goalCourse])
                 return null;
             else return checkCourse;
         }
         else return checkCourse;
     }
 
-    // Find Functions
-    void FindInteractable(InteractableType type)
+    //Activities
+    private void Die()
     {
-        Interactable[] objects = GameController.instance.FindInteractable(type);
-        if (objects.Length == 0 && type != InteractableType.Build)
-        {
-            Debug.Log(type);
-            if (!FindConstruction(type))
-            {
-                FindInteractable(InteractableType.Build);
+        Destroy(gameObject);
+    }
 
-                if (currentObject)
+    private IEnumerator AddWait()
+    {
+        while (true)
+            yield return DoActivity(Wait).MoveNext();
+    }
+
+    private void AddState(Activity newActivity, InteractableType type)
+    {
+        // Try to Find Interactable of Type.
+        if (currentInteractable = FindInteractable(type))
+        {
+            if (pathing.AtDestination(currentInteractable.activityPoint))
+            {
+                currentInteractable.InUse = true;
+                if (type == InteractableType.Job)
+                    currentState.Push(DoJob(currentInteractable as Job, newActivity));
+                else
+                    currentState.Push(DoActivity(newActivity));
+            }
+            else currentState.Push(Travel(currentInteractable));
+        }
+        // Failed to Find Interactable, Try to Find Construction of Type.
+        else if ((currentInteractable = FindConstruction(type)))
+        {
+            currentState.Push(DoJob(currentInteractable as Job, Work));
+            if (pathing.AtDestination(currentInteractable.activityPoint))
+                currentInteractable.InUse = true;
+            else currentState.Push(Travel(currentInteractable));
+        }
+        // Failed to Find Construction, Start a new Construction Project.
+        else
+        {
+            if (currentInteractable = FindInteractable(InteractableType.Build))
+            {
+                (currentInteractable as Job).progress.Invoke();
+                if (currentInteractable = Manager.instance.BuildRoom(type, currentInteractable.activityPoint))
                 {
-                    (currentObject as Job).progress.Invoke();
-                    GameController.instance.BuildRoom(type, currentObject.transform);
+                    currentState.Push(DoJob(currentInteractable as Job, Work));
+                    if (pathing.AtDestination(currentInteractable.activityPoint))
+                        currentInteractable.InUse = true;
+                    else currentState.Push(Travel(currentInteractable));
                 }
             }
         }
-        else
-        {
-            currentObject = GameController.FindClosest(objects, transform);
-            StartCoroutine(Travel(currentObject));
-        }
     }
 
-    public bool FindConstruction(InteractableType type)
+    private IEnumerator DoActivity(Activity activity)
     {
-        Construction[] objects = GameController.instance.FindConstruction(type);
-        if (objects.Length == 0 && type != InteractableType.Build)
+        if (activity.oneUse)
         {
-            return false;
+            changeStatsDirect(activity.statsDelta.ToArray());
+            changeResourcesDirect(activity.resourcesDelta.ToArray());
         }
         else
         {
-            Construction temp = GameController.FindClosest(objects, transform);
-            Interactable[] jobs = temp.GetComponentsInChildren<Interactable>();
-            StartCoroutine(Travel(GameController.FindClosest(jobs, transform)));
+            changeStats(activity.statsDelta.ToArray());
+            changeResources(activity.resourcesDelta.ToArray());
+            while (!activity.isDone(this))
+            {
+                yield return null;
+                changeStats(activity.statsDelta.ToArray());
+                changeResources(activity.resourcesDelta.ToArray());
+            }
         }
-        return true;
     }
 
-    //Activities
+    private IEnumerator DoJob(Job jobObject, Activity activity)
+    {
+        jobObject.progress.Invoke();
+        while (DoActivity(activity).MoveNext())
+        {
+            yield return null;
+            jobObject.progress.Invoke();
+        }
+    }
+
     private IEnumerator Travel(Interactable Object)
     {
         if (Object)
         {
-            pathing.destination = Object.activityPoint.position;
-
-            currentActivity.Enqueue(walking);
-            pathing.MoveTo();
-
-            bool thereYet = false;
-            while (!thereYet)
+            pathing.destination = Object.activityPoint;
+            if (!pathing.AtDestination() && !Object.InUse)
             {
-                if (pathing.AtDestination() || Object.InUse)
-                    thereYet = true;
-                yield return null;
+                pathing.MoveTo();
+
+                bool thereYet = false;
+                while (!thereYet)
+                {
+                    if (pathing.AtDestination() || Object.InUse)
+                        thereYet = true;
+                    DoActivity(Walk).MoveNext();
+                    yield return null;
+                }
             }
-            if (currentActivity.Count > 0)
-                currentActivity.Dequeue();
-            if (pathing.AtDestination())
-            {
-                Object.InUse = true;
-                currentActivity.Enqueue(Object.activity);
-            }
+            currentInteractable = null;
         }
     }
 
-    private void Die()
+    // Find Functions
+    private Interactable FindInteractable(InteractableType type)
     {
-        Destroy(gameObject);
+        Interactable[] objects = Manager.instance.FindInteractable(type);
+        if (objects.Length <= 0)
+            return null;
+        else
+            return Manager.FindClosest(objects, transform);
+    }
+
+    private Interactable FindConstruction(InteractableType type)
+    {
+        Construction[] objects = Manager.instance.FindConstruction(type);
+        if (objects.Length == 0 && type != InteractableType.Build)
+            return null;
+        else
+        {
+            Construction temp = Manager.FindClosest(objects, transform);
+            Interactable[] jobs = temp.GetComponentsInChildren<Interactable>();
+            return Manager.FindClosest(jobs, transform);
+        }
     }
     #endregion
 }

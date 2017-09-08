@@ -39,7 +39,7 @@ public class Course
 
     public void GraduateStudent(Student student)
     {
-        GameController.instance.SchoolReputation += 20;
+        Manager.instance.SchoolReputation += 20;
         KickStudent(student);
     }
 
