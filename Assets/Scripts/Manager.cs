@@ -6,7 +6,7 @@ public class Manager : MonoBehaviour
 {
     public static Manager instance;
 
-    public int startingStudents;
+    public int studentsCount;
     public GameObject StudentSpawn;
     public GameObject studentPrefab;
     private int studentID = 0;
@@ -51,15 +51,15 @@ public class Manager : MonoBehaviour
 
         goalCourse = courses["Course_5Z"];
 
-        if (startingStudents > 0)
-        {
-            for (int i = 0; i < startingStudents; i++)
-            {
-                CreateStudent();
-                yield return new WaitForSeconds(0.5f);
-            }
-        }
-        else StartCoroutine(NeverStopAddingStudents());
+        //if (studentsCount >= 0)
+        //{
+        //    for (int i = 0; i < studentsCount; i++)
+        //    {
+        //        CreateStudent();
+        //        yield return new WaitForSeconds(0.5f);
+        //    }
+        //}
+        //else StartCoroutine(NeverStopAddingStudents());
     }
 
     private IEnumerator NeverStopAddingStudents()
@@ -100,6 +100,9 @@ public class Manager : MonoBehaviour
 
     private void Update()
     {
+        if (students.Count < studentsCount)
+            CreateStudent();
+
         if (Input.GetKeyDown(KeyCode.KeypadPlus))
         {
             Time.timeScale += 1f;
@@ -136,12 +139,12 @@ public class Manager : MonoBehaviour
         return null;
     }
 
-    public Interactable[] FindInteractable(InteractableType type)
+    public Interactable[] FindInteractable(InteractableType type, Student reference)
     {
         List<Interactable> ObjectsOfType = new List<Interactable>();
         for (int i = 0; i < InteractableObjects.Count; i++)
         {
-            if(InteractableObjects[i].type == type && !InteractableObjects[i].InUse)
+            if(InteractableObjects[i].type == type && (InteractableObjects[i].InUse == null || InteractableObjects[i].InUse == reference))
                 ObjectsOfType.Add(InteractableObjects[i]);
         }
 
@@ -166,25 +169,6 @@ public class Manager : MonoBehaviour
             return ObjectOne;
         else
             return ObjectTwo;
-    }
-
-    public static Interactable FindClosest(Interactable[] objects, Transform reference)
-    {
-        Interactable temp = null;
-        float closestDistance = Mathf.Infinity;
-        for (int i = 0; i < objects.Length; i++)
-        {
-            if (!objects[i].Equals(null) && !objects[i].InUse)
-            {
-                float distance = ((objects[i] as MonoBehaviour).transform.position - reference.position).magnitude;
-                if (distance <= closestDistance)
-                {
-                    closestDistance = distance;
-                    temp = objects[i];
-                }
-            }
-        }
-        return temp;
     }
 
     public static T FindClosest<T>(T[] objects, Transform reference)

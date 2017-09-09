@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Events;
 
 public enum InteractableType
 {
@@ -16,7 +17,8 @@ public enum InteractableType
 public class Interactable : MonoBehaviour
 {
     public InteractableType type;
-    public bool InUse = false;
+    public Student InUse = null;
+    public UnityEvent progress;
 
     public Transform activityPoint;
 
@@ -25,7 +27,7 @@ public class Interactable : MonoBehaviour
         Manager.instance.InteractableObjects.Add(this);
         if (!activityPoint)
         {
-            if (transform.GetChild(0))
+            if (transform.childCount > 0)
                 activityPoint = transform.GetChild(0);
             else
                 activityPoint = transform;

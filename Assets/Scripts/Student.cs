@@ -51,15 +51,15 @@ public class Student : MonoBehaviour
 
     private void InitActivities()
     {
-        Wait = new Activity("Waiting", new float[] { -0.1f, 0, -0.5f });
-        Walk = new Activity("Walking", new float[] { -0.1f, 0, -0.5f });
+        Wait = new Activity("Waiting", new float[] { -0.1f, 0, -0.2f });
+        Walk = new Activity("Walking", new float[] { -0.1f, 0, -0.2f });
 
         Sleep = new Activity("Sleeping", new float[] { 0, 0, 1f });
         Eat = new Activity("Eating", new float[] { 1f, 0, 0 }, new float[] { -0.5f, 0 });
-        Work = new Activity("Working", new float[] { -0.1f, 0, -0.5f }, new float[] { 1, 0 });
+        Work = new Activity("Working", new float[] { -0.1f, 0, -0.2f }, new float[] { 1, 0 });
 
-        Read = new Activity("Reading", new float[] { -0.1f, 0, -0.5f }, new float[] { 0, 1 });
-        Study = new Activity("Studying", new float[] { -0.1f, 0, -0.5f }, new float[] { 0, -1 });
+        Read = new Activity("Reading", new float[] { -0.1f, 0, -0.2f }, new float[] { 0, 1 });
+        Study = new Activity("Studying", new float[] { -0.1f, 0, -0.2f }, new float[] { 0, -1 });
 
         initActivities = false;
     }
@@ -169,7 +169,7 @@ public class Student : MonoBehaviour
                 currentState.Pop();
                 if (currentInteractable)
                 {
-                    currentInteractable.InUse = false;
+                    currentInteractable.InUse = null;
                     currentInteractable = null;
                 }
             }
@@ -190,6 +190,8 @@ public class Student : MonoBehaviour
 
     private Course GetDependency(Course checkCourse)
     {
+        if (checkCourse == null)
+            return null;
         if (checkCourse.PreReq.Count > 0)
         {
             for (int i = 0; i < checkCourse.PreReq.Count; i++)
@@ -222,22 +224,17 @@ public class Student : MonoBehaviour
         // Try to Find Interactable of Type.
         if (currentInteractable = FindInteractable(type))
         {
-            if (pathing.AtDestination(currentInteractable.activityPoint))
-            {
-                currentInteractable.InUse = true;
-                if (type == InteractableType.Job)
-                    currentState.Push(DoJob(currentInteractable as Job, newActivity));
-                else
-                    currentState.Push(DoActivity(newActivity));
-            }
+            currentInteractable.InUse = this;
+            if (pathing.AtDestination(currentInteractable.activityPoint.transform))
+                currentState.Push(DoActivity(newActivity));
             else currentState.Push(Travel(currentInteractable));
         }
         // Failed to Find Interactable, Try to Find Construction of Type.
         else if ((currentInteractable = FindConstruction(type)))
         {
-            currentState.Push(DoJob(currentInteractable as Job, Work));
-            if (pathing.AtDestination(currentInteractable.activityPoint))
-                currentInteractable.InUse = true;
+            currentInteractable.InUse = this;
+            if (pathing.AtDestination(currentInteractable.activityPoint.transform))
+                currentState.Push(DoActivity(Work, currentInteractable));
             else currentState.Push(Travel(currentInteractable));
         }
         // Failed to Find Construction, Start a new Construction Project.
@@ -245,20 +242,22 @@ public class Student : MonoBehaviour
         {
             if (currentInteractable = FindInteractable(InteractableType.Build))
             {
-                (currentInteractable as Job).progress.Invoke();
+                (currentInteractable).progress.Invoke();
                 if (currentInteractable = Manager.instance.BuildRoom(type, currentInteractable.activityPoint))
                 {
-                    currentState.Push(DoJob(currentInteractable as Job, Work));
-                    if (pathing.AtDestination(currentInteractable.activityPoint))
-                        currentInteractable.InUse = true;
+                    currentInteractable.InUse = this;
+                    if (pathing.AtDestination(currentInteractable.activityPoint.transform))
+                        currentState.Push(DoActivity(Work, currentInteractable));
                     else currentState.Push(Travel(currentInteractable));
                 }
             }
         }
     }
 
-    private IEnumerator DoActivity(Activity activity)
+    private IEnumerator DoActivity(Activity activity, Interactable jobObject = null)
     {
+        if (jobObject)
+            jobObject.progress.Invoke();
         if (activity.oneUse)
         {
             changeStatsDirect(activity.statsDelta.ToArray());
@@ -277,29 +276,19 @@ public class Student : MonoBehaviour
         }
     }
 
-    private IEnumerator DoJob(Job jobObject, Activity activity)
-    {
-        jobObject.progress.Invoke();
-        while (DoActivity(activity).MoveNext())
-        {
-            yield return null;
-            jobObject.progress.Invoke();
-        }
-    }
-
     private IEnumerator Travel(Interactable Object)
     {
         if (Object)
         {
             pathing.destination = Object.activityPoint;
-            if (!pathing.AtDestination() && !Object.InUse)
+            if (!pathing.AtDestination() && Object.InUse == this)
             {
                 pathing.MoveTo();
 
                 bool thereYet = false;
                 while (!thereYet)
                 {
-                    if (pathing.AtDestination() || Object.InUse)
+                    if (pathing.AtDestination() || !Object.InUse == this)
                         thereYet = true;
                     DoActivity(Walk).MoveNext();
                     yield return null;
@@ -312,7 +301,7 @@ public class Student : MonoBehaviour
     // Find Functions
     private Interactable FindInteractable(InteractableType type)
     {
-        Interactable[] objects = Manager.instance.FindInteractable(type);
+        Interactable[] objects = Manager.instance.FindInteractable(type, this);
         if (objects.Length <= 0)
             return null;
         else

@@ -25,17 +25,13 @@ public class ComputerLab : MonoBehaviour
     {
         labCourse = newCourse;
         if (labCourse.courseCost <= 0)
-        {
             labOpen = true;
-            door.InUse = true;
-        }
     }
 
     public void CloseLab()
     {
         labOpen = false;
         labCourse = null;
-        door.InUse = false;
     }
 
     public void ImproveGrade(Student student, float increase)
