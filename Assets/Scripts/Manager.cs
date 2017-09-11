@@ -51,15 +51,15 @@ public class Manager : MonoBehaviour
 
         goalCourse = courses["Course_5Z"];
 
-        //if (studentsCount >= 0)
-        //{
-        //    for (int i = 0; i < studentsCount; i++)
-        //    {
-        //        CreateStudent();
-        //        yield return new WaitForSeconds(0.5f);
-        //    }
-        //}
-        //else StartCoroutine(NeverStopAddingStudents());
+        if (studentsCount >= 0)
+        {
+            for (int i = 0; i < studentsCount; i++)
+            {
+                CreateStudent();
+                yield return new WaitForSeconds(0.5f);
+            }
+        }
+        else StartCoroutine(NeverStopAddingStudents());
     }
 
     private IEnumerator NeverStopAddingStudents()
@@ -100,8 +100,8 @@ public class Manager : MonoBehaviour
 
     private void Update()
     {
-        if (students.Count < studentsCount)
-            CreateStudent();
+        //if (students.Count < studentsCount)
+        //    CreateStudent();
 
         if (Input.GetKeyDown(KeyCode.KeypadPlus))
         {

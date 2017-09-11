@@ -25,6 +25,11 @@ public class Interactable : MonoBehaviour
     private void Start()
     {
         Manager.instance.InteractableObjects.Add(this);
+        findActivityPoint();
+    }
+
+    public void findActivityPoint()
+    {
         if (!activityPoint)
         {
             if (transform.childCount > 0)

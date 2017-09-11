@@ -238,18 +238,16 @@ public class Student : MonoBehaviour
             else currentState.Push(Travel(currentInteractable));
         }
         // Failed to Find Construction, Start a new Construction Project.
-        else
+        else if (currentInteractable = FindInteractable(InteractableType.Build))
         {
-            if (currentInteractable = FindInteractable(InteractableType.Build))
+            (currentInteractable).progress.Invoke();
+            if (currentInteractable = Manager.instance.BuildRoom(type, currentInteractable.activityPoint))
             {
-                (currentInteractable).progress.Invoke();
-                if (currentInteractable = Manager.instance.BuildRoom(type, currentInteractable.activityPoint))
-                {
-                    currentInteractable.InUse = this;
-                    if (pathing.AtDestination(currentInteractable.activityPoint.transform))
-                        currentState.Push(DoActivity(Work, currentInteractable));
-                    else currentState.Push(Travel(currentInteractable));
-                }
+                currentInteractable.findActivityPoint();
+                currentInteractable.InUse = this;
+                if (pathing.AtDestination(currentInteractable.activityPoint.transform))
+                    currentState.Push(DoActivity(Work, currentInteractable));
+                else currentState.Push(Travel(currentInteractable));
             }
         }
     }
@@ -280,10 +278,9 @@ public class Student : MonoBehaviour
     {
         if (Object)
         {
-            pathing.destination = Object.activityPoint;
+            pathing.MoveTo(Object.activityPoint);
             if (!pathing.AtDestination() && Object.InUse == this)
             {
-                pathing.MoveTo();
 
                 bool thereYet = false;
                 while (!thereYet)

@@ -16,8 +16,9 @@ public class Pathfinding : MonoBehaviour
         agent.avoidancePriority = Random.Range(1, 100);
     }
 
-    public void MoveTo()
+    public void MoveTo(Transform destination)
     {
+        this.destination = destination;
         agent.avoidancePriority = Random.Range(1, 99);
         agent.SetDestination(destination.position);
     }
