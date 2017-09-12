@@ -29,7 +29,7 @@ public class Construction : MonoBehaviour
     public void WorkOnProject(int completionDelta)
     {
         // completionDelta = Percent of Work to be Done in one second
-        completion += completionDelta * Time.deltaTime; 
+        completion += completionDelta * Time.deltaTime;
         if (hasBeenWorkedOn == false)
             StartCoroutine(UpdatePhase());
     }

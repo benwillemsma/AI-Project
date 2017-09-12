@@ -25,7 +25,11 @@ public class Student : MonoBehaviour
     private Interactable currentInteractable;
     private Stack<IEnumerator> currentState = new Stack<IEnumerator>();
 
-    public Course currentCourse;
+    [HideInInspector]
+    public ComputerLab currentLab = null;
+    [HideInInspector,Course]
+    public Course currentCourse = null;
+
     private Dictionary<Course, bool> passedCourses = new Dictionary<Course, bool>();
 
     private static bool initActivities = true;
@@ -36,10 +40,15 @@ public class Student : MonoBehaviour
     private static Activity Read;
     private static Activity Study;
     private static Activity Work;
+    private static Activity OpenLab;
 
     private void Start()
     {
         Manager.instance.students.Add(this);
+
+        foreach (KeyValuePair<string, Course> course in Manager.instance.courses)
+            passedCourses.Add(course.Value, false);
+
         pathing = GetComponent<Pathfinding>();
 
         if (initActivities)
@@ -60,12 +69,14 @@ public class Student : MonoBehaviour
 
         Read = new Activity("Reading", new float[] { -0.1f, 0, -0.2f }, new float[] { 0, 1 });
         Study = new Activity("Studying", new float[] { -0.1f, 0, -0.2f }, new float[] { 0, -1 });
+        OpenLab = new Activity("PayForClass", new float[] { -0.1f, 0, -0.2f }, new float[] { -1, 0 });
 
         initActivities = false;
     }
     #endregion
 
     #region Student Stats and Resources
+    [HideInInspector]
     public List<float> stats;
     private float Energy
     {
@@ -83,6 +94,7 @@ public class Student : MonoBehaviour
         set { stats[(int)studentStats.Stamina] = value; }
     }
 
+    [HideInInspector]
     public List<float> resources;
     private float CourseWork
     {
@@ -163,7 +175,6 @@ public class Student : MonoBehaviour
 
         if (currentState.Count > 0)
         {
-            //Debug.Log(gameObject.name + ":  :" + currentState.Count + ":  :" + currentState.Peek() + ":  :" + currentInteractable);
             if (!currentState.Peek().MoveNext() || !currentInteractable)
             {
                 currentState.Pop();
@@ -174,6 +185,7 @@ public class Student : MonoBehaviour
                 }
             }
         }
+        else currentState.Push(AddWait());
     }
     private void OnDestroy()
     {
@@ -183,50 +195,69 @@ public class Student : MonoBehaviour
     }
 
     // Course Functions
+    public void Graduate(Course course)
+    {
+        passedCourses[course] = true;
+        currentLab = null;
+        FindNextCourse();
+    }
+
     private void FindNextCourse()
     {
         currentCourse = GetDependency(Manager.goalCourse);
+
+        if (currentCourse == null)
+        {
+            //Dance and recoice bacuse you Graduated!
+            Destroy(gameObject);
+        }
+        else currentCourse.EnrollStudent(this);
     }
 
     private Course GetDependency(Course checkCourse)
     {
         if (checkCourse == null)
-            return null;
-        if (checkCourse.PreReq.Count > 0)
+            return null; //return if checkCourse doesn't exist
+
+        if (passedCourses[checkCourse])
+            return null; // Return null if checkCourse is already passed
+        else // else check Course PreRec
         {
             for (int i = 0; i < checkCourse.PreReq.Count; i++)
             {
-                Course temp = GetDependency(checkCourse.PreReq[i]);
-                if (GetDependency(checkCourse.PreReq[i]) != null)
-                    return temp;
+
+                if (GetDependency(checkCourse.PreReq.GetPreReq(i)) != null)
+                    return GetDependency(checkCourse.PreReq.GetPreReq(i)); // Return dependency recursivly
             }
-            if (passedCourses[Manager.goalCourse])
-                return null;
-            else return checkCourse;
+            return checkCourse; // return checkCourse if all dependecies passed
         }
-        else return checkCourse;
-    }
-
-    //Activities
-    private void Die()
-    {
-        Destroy(gameObject);
-    }
-
-    private IEnumerator AddWait()
-    {
-        while (true)
-            yield return DoActivity(Wait).MoveNext();
     }
 
     private void AddState(Activity newActivity, InteractableType type)
     {
+        if (type == InteractableType.Desk && (currentInteractable = FindLab()))
+        {
+            if (currentInteractable.type == type)
+            {
+                currentInteractable.InUse = this;
+                if (pathing.AtDestination(currentInteractable.activityPoint.transform))
+                    currentState.Push(DoActivity(newActivity, currentInteractable));
+                else currentState.Push(Travel(currentInteractable));
+            }
+            else
+            {
+                currentInteractable.InUse = this;
+                if (pathing.AtDestination(currentInteractable.activityPoint.transform))
+                    currentState.Push(DoActivity(OpenLab, currentInteractable));
+                else currentState.Push(Travel(currentInteractable));
+            }
+        }
         // Try to Find Interactable of Type.
-        if (currentInteractable = FindInteractable(type))
+        else if ((currentInteractable = FindInteractable(type)) && type != InteractableType.Desk)
         {
             currentInteractable.InUse = this;
             if (pathing.AtDestination(currentInteractable.activityPoint.transform))
-                currentState.Push(DoActivity(newActivity));
+                currentState.Push(DoActivity(newActivity, currentInteractable));
             else currentState.Push(Travel(currentInteractable));
         }
         // Failed to Find Interactable, Try to Find Construction of Type.
@@ -245,31 +276,44 @@ public class Student : MonoBehaviour
             {
                 currentInteractable.findActivityPoint();
                 currentInteractable.InUse = this;
-                if (pathing.AtDestination(currentInteractable.activityPoint.transform))
-                    currentState.Push(DoActivity(Work, currentInteractable));
-                else currentState.Push(Travel(currentInteractable));
             }
         }
     }
 
-    private IEnumerator DoActivity(Activity activity, Interactable jobObject = null)
+    private void Die()
+    {
+        Debug.Log("Student Died");
+        Destroy(gameObject);
+    }
+
+    //Activities
+    private IEnumerator AddWait()
+    {
+        while (true)
+            yield return DoActivity(Wait, null).MoveNext();
+    }
+
+    private IEnumerator DoActivity(Activity activity, Interactable jobObject)
     {
         if (jobObject)
+        {
             jobObject.progress.Invoke();
-        if (activity.oneUse)
-        {
-            changeStatsDirect(activity.statsDelta.ToArray());
-            changeResourcesDirect(activity.resourcesDelta.ToArray());
-        }
-        else
-        {
-            changeStats(activity.statsDelta.ToArray());
-            changeResources(activity.resourcesDelta.ToArray());
-            while (!activity.isDone(this))
+            if (activity.oneUse)
             {
-                yield return null;
+                changeStatsDirect(activity.statsDelta.ToArray());
+                changeResourcesDirect(activity.resourcesDelta.ToArray());
+            }
+            else
+            {
                 changeStats(activity.statsDelta.ToArray());
                 changeResources(activity.resourcesDelta.ToArray());
+                while (!activity.isDone(this))
+                {
+                    yield return null;
+                    changeStats(activity.statsDelta.ToArray());
+                    changeResources(activity.resourcesDelta.ToArray());
+                    jobObject.progress.Invoke();
+                }
             }
         }
     }
@@ -287,7 +331,7 @@ public class Student : MonoBehaviour
                 {
                     if (pathing.AtDestination() || !Object.InUse == this)
                         thereYet = true;
-                    DoActivity(Walk).MoveNext();
+                    DoActivity(Walk, null).MoveNext();
                     yield return null;
                 }
             }
@@ -299,23 +343,67 @@ public class Student : MonoBehaviour
     private Interactable FindInteractable(InteractableType type)
     {
         Interactable[] objects = Manager.instance.FindInteractable(type, this);
-        if (objects.Length <= 0)
-            return null;
-        else
+        if (objects.Length > 0)
             return Manager.FindClosest(objects, transform);
+        return null;
+    }
+
+    private Interactable[] FindAvailable(Interactable[] array, Student reference)
+    {
+        List<Interactable> list = new List<Interactable>();
+        list.AddRange(array);
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (list[i].InUse == null || list[i].InUse == reference)
+                continue;
+            list.RemoveAt(i);
+        }
+        return list.ToArray();
     }
 
     private Interactable FindConstruction(InteractableType type)
     {
         Construction[] objects = Manager.instance.FindConstruction(type);
-        if (objects.Length == 0 && type != InteractableType.Build)
-            return null;
-        else
+        if (objects.Length > 0 && type != InteractableType.Build)
         {
             Construction temp = Manager.FindClosest(objects, transform);
             Interactable[] jobs = temp.GetComponentsInChildren<Interactable>();
+            jobs = FindAvailable(jobs, this);
             return Manager.FindClosest(jobs, transform);
         }
+        return null;
+    }
+
+    private Interactable FindLab()
+    {
+        if (currentLab)
+        {
+            if (currentLab.isOpen)
+            {
+                Interactable[] desks = currentLab.gameObject.GetComponentsInChildren<Interactable>();
+                desks = FindAvailable(desks, this);
+                return Manager.FindClosest(desks, transform);
+            }
+            else return currentLab.Lab;
+        }
+        else
+        {
+            ComputerLab[] objects = Manager.instance.FindComputerLab(this);
+            if (objects.Length > 0)
+            {
+                for (int i = 0; i < objects.Length; i++)
+                {
+                    if (objects[i].labCourse == currentCourse)
+                    {
+                        currentLab = objects[i];
+                        if(currentLab.isOpen)
+                            return FindLab();
+                    }
+                }
+                return Manager.FindClosest(objects, transform).Lab;
+            }
+        }
+        return null;
     }
     #endregion
 }

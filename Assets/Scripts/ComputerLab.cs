@@ -2,52 +2,81 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(Animator))]
 public class ComputerLab : MonoBehaviour
 {
-    public float amountPerUse;
-    public bool labOpen;
+    public float GradeDelta = 5;
+    public bool isOpen = false;
+
+    private float cost;
 
     Dictionary<Student, float> grades = new Dictionary<Student, float>();
 
+    [Course]
     public Course labCourse = null;
 
     [SerializeField]
-    Interactable[] Desks;
-    Interactable door;
+    private Interactable[] Desks;
+    public Interactable Lab;
 
     public void Start()
     {
-        door = GetComponent<Interactable>();
+        Manager.instance.ComputerLabs.Add(this);
+        Lab = GetComponent<Interactable>();
     }
 
-    public void OpenLab(Course newCourse)
+    public void OpenLab(Interactable reference)
     {
-        labCourse = newCourse;
-        if (labCourse.courseCost <= 0)
-            labOpen = true;
+        Student student = reference.InUse;
+        if (labCourse == null)
+        {
+            labCourse = student.currentCourse;
+            cost = labCourse.courseCost;
+        }
+
+        cost -= Time.deltaTime;
+        if (cost <= 0)
+        {
+            //Debug.Log("Lab is Open:" + labCourse.name);
+            isOpen = true;
+            Lab.InUse = student;
+        }
     }
 
-    public void CloseLab()
+    private void CloseLab()
     {
-        labOpen = false;
+        //Debug.Log("Lab is CLosed");
+        grades.Clear();
+        Lab.InUse = null;
+        isOpen = false;
         labCourse = null;
     }
 
-    public void ImproveGrade(Student student, float increase)
+    public void ImproveGrade(Interactable reference)
     {
-        Manager.instance.SchoolReputation += 5;
-        grades[student] += increase;
-        for (int i = 0; i < labCourse.Students.Length; i++)
+        Student student = reference.InUse;
+        if (student)
         {
-            if (labCourse.Students[i] != student)
-                grades[student] += increase * 0.1f;
-        }
-        if (grades[student] >= 100)
-        {
-            labCourse.GraduateStudent(student);
-            if (labCourse.Students.Length <= 0)
-                CloseLab();
+            if (labCourse == null)
+                labCourse = student.currentCourse;
+
+            float newStudent;
+            if (!grades.TryGetValue(student, out newStudent))
+                grades.Add(student, 0);
+
+            Manager.instance.SchoolReputation += 5 * Time.deltaTime;
+            grades[student] += GradeDelta * Time.deltaTime;
+            for (int i = 0; i < labCourse.Students.Length; i++)
+            {
+                if (labCourse.Students[i] != student)
+                    grades[student] += GradeDelta * 0.1f * Time.deltaTime;
+            }
+            if (grades[student] >= 100)
+            {
+                reference.InUse = null;
+                labCourse.GraduateStudent(student);
+                if (labCourse.Students.Length <= 0)
+                    CloseLab();
+            }
         }
     }
 }

@@ -6,6 +6,9 @@ public class Manager : MonoBehaviour
 {
     public static Manager instance;
 
+    public int ROWS = 21;
+    public int COLS = 21;
+
     public int studentsCount;
     public GameObject StudentSpawn;
     public GameObject studentPrefab;
@@ -13,7 +16,7 @@ public class Manager : MonoBehaviour
 
     public static Course goalCourse;
 
-    private bool[,] roomGrid = new bool[21, 21];
+    private bool[,] roomGrid;
 
     [SerializeField, Range(0, 100)]
     private float schoolRep;
@@ -30,9 +33,10 @@ public class Manager : MonoBehaviour
             }
         }
     }
-
+    
     public List<Interactable> InteractableObjects = new List<Interactable>();
     public List<Construction> ConsructionObjects = new List<Construction>();
+    public List<ComputerLab> ComputerLabs = new List<ComputerLab>();
 
     public List<Student> students = new List<Student>();
     public Dictionary<string, Course> courses = new Dictionary<string, Course>();
@@ -45,9 +49,11 @@ public class Manager : MonoBehaviour
         else
             Destroy(gameObject);
 
+        roomGrid = new bool[ROWS + 1, COLS + 1];
+        roomGrid[(ROWS / 2) + 1, (COLS / 2) + 1] = true;
+
         InteractableObjects.AddRange(FindObjectsOfType<Interactable>());
         yield return StartCoroutine(InitCourses());
-        roomGrid[11, 11] = true;
 
         goalCourse = courses["Course_5Z"];
 
@@ -58,16 +64,6 @@ public class Manager : MonoBehaviour
                 CreateStudent();
                 yield return new WaitForSeconds(0.5f);
             }
-        }
-        else StartCoroutine(NeverStopAddingStudents());
-    }
-
-    private IEnumerator NeverStopAddingStudents()
-    {
-        while (true)
-        {
-            CreateStudent();
-            yield return new WaitForSeconds(5f);
         }
     }
 
@@ -100,9 +96,6 @@ public class Manager : MonoBehaviour
 
     private void Update()
     {
-        //if (students.Count < studentsCount)
-        //    CreateStudent();
-
         if (Input.GetKeyDown(KeyCode.KeypadPlus))
         {
             Time.timeScale += 1f;
@@ -131,14 +124,19 @@ public class Manager : MonoBehaviour
         spawnLocation.x = Mathf.Round(spawnLocation.x / 15);
         spawnLocation.z = Mathf.Round(spawnLocation.z / 15);
 
-        if (!roomGrid[(int)spawnLocation.x + 11, (int)spawnLocation.z + 11])
+        if (spawnLocation.x > -ROWS && spawnLocation.x < ROWS &&
+           spawnLocation.y > -COLS && spawnLocation.y < COLS)
         {
-            roomGrid[(int)spawnLocation.x + 11, (int)spawnLocation.z + 11] = true;
-            return Instantiate(Rooms[roomIndex], spawnLocation * 15, point.GetChild(0).rotation, point.root).GetComponentInChildren<Interactable>();
+            if (!roomGrid[(int)spawnLocation.x + 11, (int)spawnLocation.z + 11])
+            {
+                roomGrid[(int)spawnLocation.x + 11, (int)spawnLocation.z + 11] = true;
+                return Instantiate(Rooms[roomIndex], spawnLocation * 15, point.GetChild(0).rotation, point.root).GetComponentInChildren<Interactable>();
+            }
         }
         return null;
     }
 
+    #region Find Functions
     public Interactable[] FindInteractable(InteractableType type, Student reference)
     {
         List<Interactable> ObjectsOfType = new List<Interactable>();
@@ -159,7 +157,17 @@ public class Manager : MonoBehaviour
             if (ConsructionObjects[i].type == type)
                 ObjectsOfType.Add(ConsructionObjects[i]);
         }
+        return ObjectsOfType.ToArray();
+    }
 
+    public ComputerLab[] FindComputerLab(Student reference)
+    {
+        List<ComputerLab> ObjectsOfType = new List<ComputerLab>();
+        for (int i = 0; i < ComputerLabs.Count; i++)
+        {
+            if (!ComputerLabs[i].isOpen && (ComputerLabs[i].labCourse == null || ComputerLabs[i].labCourse == reference.currentCourse))
+                ObjectsOfType.Add(ComputerLabs[i]);
+        }
         return ObjectsOfType.ToArray();
     }
 
@@ -189,4 +197,5 @@ public class Manager : MonoBehaviour
         }
         return temp;
     }
+    #endregion  
 }

@@ -1,10 +1,45 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-public class Course
+public class CourseAttribute : PropertyAttribute { }
+
+public class PreRequsites
 {
     private List<Course> preReq = new List<Course>();
-    public List<Course> PreReq
+    public PreRequsites(IEnumerable<Course> collection)
+    {
+        preReq.AddRange(collection);
+    }
+    public PreRequsites() { }
+
+    public Course GetPreReq(int index)
+    {
+        return preReq[index];
+    }
+    public int Count
+    {
+        get { return preReq.Count; }
+    }
+
+    public void Add(Course course)
+    {
+        preReq.Add(course);
+    }
+    public void Remove(Course course)
+    {
+        preReq.Remove(course);
+    }
+    public void AddRange(IEnumerable<Course> collection)
+    {
+        preReq.AddRange(collection);
+    }
+}
+
+public class Course
+{
+    #region Course Initilization
+    private PreRequsites preReq = new PreRequsites();
+    public PreRequsites PreReq
     {
         get { return preReq; }
     }
@@ -36,24 +71,26 @@ public class Course
         this.courseCost = refCourse.courseCost;
         this.preReq = refCourse.preReq;
     }
+    #endregion
 
+    #region Student Functions
     public void GraduateStudent(Student student)
     {
-        Manager.instance.SchoolReputation += 20;
+        //Debug.Log("Student Graduated: " + student.name + ": " + name);
+        student.Graduate(this);
+        Manager.instance.SchoolReputation += 50;
         KickStudent(student);
     }
 
     public void EnrollStudent(Student newStudent)
     {
+        //Debug.Log("EnrollStudent: " + newStudent.name + ": " + name);
         students.Add(newStudent);
-        newStudent.currentCourse = this;
     }
+
     public void KickStudent(Student student)
     {
-        if (student && students != null)
-        {
-            students.Remove(student);
-            student.currentCourse = null;
-        }
+        students.Remove(student);
     }
+    #endregion
 }
