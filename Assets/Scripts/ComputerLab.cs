@@ -36,7 +36,7 @@ public class ComputerLab : MonoBehaviour
         cost -= Time.deltaTime;
         if (cost <= 0)
         {
-            //Debug.Log("Lab is Open:" + labCourse.name);
+            Debug.Log("Lab is Open:" + labCourse.name);
             isOpen = true;
             Lab.InUse = student;
         }
@@ -44,7 +44,7 @@ public class ComputerLab : MonoBehaviour
 
     private void CloseLab()
     {
-        //Debug.Log("Lab is CLosed");
+        Debug.Log("Lab is CLosed");
         grades.Clear();
         Lab.InUse = null;
         isOpen = false;

@@ -69,7 +69,7 @@ public class Student : MonoBehaviour
 
         Read = new Activity("Reading", new float[] { -0.1f, 0, -0.2f }, new float[] { 0, 1 });
         Study = new Activity("Studying", new float[] { -0.1f, 0, -0.2f }, new float[] { 0, -1 });
-        OpenLab = new Activity("PayForClass", new float[] { -0.1f, 0, -0.2f }, new float[] { -1, 0 });
+        OpenLab = new Activity("PayForClass", new float[] { -0.1f, 0, -0.2f }, new float[] { -0.5f, 0 });
 
         initActivities = false;
     }
@@ -185,7 +185,6 @@ public class Student : MonoBehaviour
                 }
             }
         }
-        else currentState.Push(AddWait());
     }
     private void OnDestroy()
     {
@@ -271,6 +270,7 @@ public class Student : MonoBehaviour
         // Failed to Find Construction, Start a new Construction Project.
         else if (currentInteractable = FindInteractable(InteractableType.Build))
         {
+    
             (currentInteractable).progress.Invoke();
             if (currentInteractable = Manager.instance.BuildRoom(type, currentInteractable.activityPoint))
             {
@@ -296,24 +296,24 @@ public class Student : MonoBehaviour
     private IEnumerator DoActivity(Activity activity, Interactable jobObject)
     {
         if (jobObject)
-        {
             jobObject.progress.Invoke();
-            if (activity.oneUse)
+        if (activity.oneUse)
+        {
+            changeStatsDirect(activity.statsDelta.ToArray());
+            changeResourcesDirect(activity.resourcesDelta.ToArray());
+        }
+        else
+        {
+            changeStats(activity.statsDelta.ToArray());
+            changeResources(activity.resourcesDelta.ToArray());
+            while (!activity.isDone(this))
             {
-                changeStatsDirect(activity.statsDelta.ToArray());
-                changeResourcesDirect(activity.resourcesDelta.ToArray());
-            }
-            else
-            {
+                yield return null;
                 changeStats(activity.statsDelta.ToArray());
                 changeResources(activity.resourcesDelta.ToArray());
-                while (!activity.isDone(this))
-                {
-                    yield return null;
-                    changeStats(activity.statsDelta.ToArray());
-                    changeResources(activity.resourcesDelta.ToArray());
+
+                if (jobObject)
                     jobObject.progress.Invoke();
-                }
             }
         }
     }

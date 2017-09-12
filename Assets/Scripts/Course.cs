@@ -76,7 +76,7 @@ public class Course
     #region Student Functions
     public void GraduateStudent(Student student)
     {
-        //Debug.Log("Student Graduated: " + student.name + ": " + name);
+        Debug.Log("Student Graduated: " + student.name + ": " + name);
         student.Graduate(this);
         Manager.instance.SchoolReputation += 50;
         KickStudent(student);
@@ -84,7 +84,7 @@ public class Course
 
     public void EnrollStudent(Student newStudent)
     {
-        //Debug.Log("EnrollStudent: " + newStudent.name + ": " + name);
+        Debug.Log("EnrollStudent: " + newStudent.name + ": " + name);
         students.Add(newStudent);
     }
 

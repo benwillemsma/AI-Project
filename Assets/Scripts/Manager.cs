@@ -120,7 +120,7 @@ public class Manager : MonoBehaviour
     {
         int roomIndex = (int)type;
 
-        Vector3 spawnLocation = point.GetChild(0).position;
+        Vector3 spawnLocation = point.position;
         spawnLocation.x = Mathf.Round(spawnLocation.x / 15);
         spawnLocation.z = Mathf.Round(spawnLocation.z / 15);
 
@@ -130,7 +130,7 @@ public class Manager : MonoBehaviour
             if (!roomGrid[(int)spawnLocation.x + 11, (int)spawnLocation.z + 11])
             {
                 roomGrid[(int)spawnLocation.x + 11, (int)spawnLocation.z + 11] = true;
-                return Instantiate(Rooms[roomIndex], spawnLocation * 15, point.GetChild(0).rotation, point.root).GetComponentInChildren<Interactable>();
+                return Instantiate(Rooms[roomIndex], spawnLocation * 15, point.rotation, point.root).GetComponentInChildren<Interactable>();
             }
         }
         return null;
